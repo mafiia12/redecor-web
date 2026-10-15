@@ -3,3 +3,4 @@ dist
 .env
 *.db
 portfolio_preview/
+clients_preview/

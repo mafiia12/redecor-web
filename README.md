@@ -39,6 +39,14 @@ python tools/import_portfolio.py --pdf-dir "D:\Master Web (Redecor)" --email ADM
 ```
 Projects are created hidden; review them in `/admin`, then tick Published (or rerun with `--publish`). Edit the manifest first if names, countries, types or page ranges are wrong.
 
+## Importing client logos
+`tools/import_clients.py` cuts each logo out of the "Our Clients" pages (Fit-out p.5-6 and Brief p.5-6), makes transparent PNGs, drops duplicates, and uploads them as clients:
+```bash
+python tools/import_clients.py --pdf-dir "D:\\Master Web (Redecor)" --dry-run      # preview in ./clients_preview
+python tools/import_clients.py --pdf-dir "D:\\Master Web (Redecor)" --email ADMIN_EMAIL --names names.txt --replace-demo
+```
+`names.txt` = one client name per line, in the preview order (otherwise they are "Client 01"... and can be renamed in `/admin`).
+
 ## Performance choices
 One `/api/bootstrap` call (ETag + sessionStorage) for first paint; route-level code splitting (admin code never loads on the public site); self-hosted fonts; lazy `srcset` images with reserved aspect ratios (no layout shift); gzip; reduced-motion respected.
 
