@@ -7,9 +7,10 @@ import { useData, useLang, usePageMeta } from "../lib/context";
 import NotFound from "./NotFound";
 
 const HINTS: Record<string, string> = {
-  design: "Service hero: designer’s table with drawings and material samples",
+  contracting: "Service hero: site works in progress",
   fitout: "Service hero: hallway with stone floor and timber joinery, finished",
   supply: "Service hero: curated materials and fixtures ready for delivery",
+  "project-management": "Service hero: project team reviewing drawings on site",
 };
 
 export default function ServiceDetail() {
@@ -38,7 +39,7 @@ export default function ServiceDetail() {
         <SitePhoto slot={`service-${s.slug}-hero`} ratio="16/9" priority hint={HINTS[s.slug]} alt={s.title} sizes="(min-width:1440px) 1440px, 100vw" />
       </div>
 
-      <section className="section">
+      {s.included.length > 0 && <section className="section">
         <div className="container">
           <Reveal className="section-head">
             <h2 className="h2">{t.services.included}</h2>
@@ -53,7 +54,7 @@ export default function ServiceDetail() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {s.slug === "fitout" && (
         <section className="section section--tight-top" style={{ paddingBottom: "var(--section-y)" }}>

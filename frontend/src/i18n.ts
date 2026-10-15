@@ -17,10 +17,10 @@ const en = {
     h1: "Spaces, finished to the last detail.",
     sub: "Design, fit-out and supply for homes, hospitality and business across Egypt and Qatar.",
     seeProjects: "See our projects ›",
-    servicesTitle: "Services",
+    servicesTitle: "Our Services",
     servicesSub: "From the first drawing to the final finish.",
-    projectsTitle: "Selected projects",
-    projectsSub: "Recent work in Egypt and Qatar.",
+    projectsTitle: "Our Projects",
+    projectsSub: "A showcase of craftsmanship, precision, and thoughtful execution.",
     allProjects: "See all projects ›",
     heroAlt: "A finished interior by RE DECOR & MORE",
   },
@@ -40,8 +40,8 @@ const en = {
   countries: { eg: "Egypt", qa: "Qatar" } as Record<string, string>,
   types: { residential: "Residential", hospitality: "Hospitality", retail: "Retail", office: "Office" } as Record<string, string>,
   projects: {
-    title: "Projects",
-    description: "Homes, hospitality, retail and offices across Egypt and Qatar.",
+    title: "Our Projects",
+    description: "A showcase of craftsmanship, precision, and thoughtful execution.",
     count: (n: number) => (n === 1 ? "1 project" : `${n} projects`),
     emptyTitle: "No projects match these filters.",
     emptySub: "Try another country or project type.",
@@ -54,27 +54,26 @@ const en = {
     imgEmpty: "Photo coming soon",
   },
   services: {
-    kicker: "Services",
+    kicker: "Our Services",
     included: "What’s included",
     includedSub: "Everything between the approved drawings and a finished space.",
     relatedProjects: "See related projects ›",
     relatedSub: "Fit-out and finishing work in Egypt and Qatar.",
   },
   about: {
-    title: "About Redecor Group",
-    sub: "Interior design, fit-out, finishing and supply for homes, hospitality and business across Egypt and Qatar.",
-    story: "Our story",
-    paras: [
-      "[Company story, paragraph 1: when and why Redecor Group started.]",
-      "[Paragraph 2: the kinds of spaces the team designs and builds.]",
-      "[Paragraph 3: how the Egypt and Qatar offices work together.]",
-    ],
+    title: "About Us",
+    sub: "Redecor Group delivers integrated contracting, interior fit-out, and supply solutions, combining precision, quality, and attention to detail.",
+    vision: "Our Vision",
+    visionText: "To redefine excellence in construction and interior spaces.",
+    mission: "Our Mission",
+    missionText: "To transform ideas into exceptional spaces through quality and innovation.",
     offices: "Our offices",
     officesSub: "Two teams, one standard of finish.",
   },
   contact: {
-    title: "Contact",
-    sub: "Tell us about your project, or visit one of our offices.",
+    kicker: "Contact",
+    title: "Let's Build Something Exceptional.",
+    sub: "Tell us about your next project.",
     formTitle: "Send an enquiry",
     formSub: "We’ll reply using your preferred contact method.",
   },
@@ -86,7 +85,7 @@ const en = {
   form: {
     name: "Name *", phone: "Phone *", email: "Email", country: "Country *", service: "Service *", type: "Project type",
     area: "Approx. area", message: "Message", method: "Preferred contact method", select: "Select",
-    services: { design: "Interior Design", fitout: "Fine Finishes & Fit-Out", supply: "Supply", unsure: "Not sure yet" } as Record<string, string>,
+    services: { contracting: "Contracting", fitout: "Interior Fit-Out", supply: "Procurement & Supply", pm: "Project Management", unsure: "Not sure yet" } as Record<string, string>,
     methods: { phone: "Phone", whatsapp: "WhatsApp", email: "Email" } as Record<string, string>,
     unit: "m²",
     consent: "I agree that Redecor Group may contact me about this enquiry.",
@@ -124,7 +123,7 @@ const en = {
   },
   privacy: {
     title: "Privacy policy",
-    body: "[Privacy policy text to be provided by Redecor Group before launch.]",
+    body: "We respect your privacy and protect the information you share with us.",
   },
   notFound: { title: "Page not found", sub: "The page you’re looking for doesn’t exist or has moved.", home: "Back to home" },
 };
@@ -148,8 +147,8 @@ const ar: typeof en = {
     seeProjects: "شوف مشاريعنا ‹",
     servicesTitle: "خدماتنا",
     servicesSub: "من أول رسم حتى آخر لمسة تشطيب.",
-    projectsTitle: "مشاريع مختارة",
-    projectsSub: "أحدث أعمالنا في مصر وقطر.",
+    projectsTitle: "مشاريعنا",
+    projectsSub: "عرض لأعمال تعكس الإتقان والدقة والتنفيذ المدروس.",
     allProjects: "عرض كل المشاريع ‹",
     heroAlt: "مساحة داخلية مكتملة من ريديكور آند مور",
   },
@@ -169,8 +168,8 @@ const ar: typeof en = {
   countries: { eg: "مصر", qa: "قطر" },
   types: { residential: "سكني", hospitality: "ضيافة", retail: "تجزئة", office: "مكاتب" },
   projects: {
-    title: "المشاريع",
-    description: "وحدات سكنية وفنادق ومحلات ومكاتب في مصر وقطر.",
+    title: "مشاريعنا",
+    description: "عرض لأعمال تعكس الإتقان والدقة والتنفيذ المدروس.",
     count: (n: number) => (n === 1 ? "مشروع واحد" : n === 2 ? "مشروعان" : n <= 10 ? `${n} مشاريع` : `${n} مشروعًا`),
     emptyTitle: "لا توجد مشاريع تطابق هذه الفلاتر.",
     emptySub: "جرّب دولة أو نوع مشروع آخر.",
@@ -183,27 +182,26 @@ const ar: typeof en = {
     imgEmpty: "الصورة قريبًا",
   },
   services: {
-    kicker: "الخدمات",
+    kicker: "خدماتنا",
     included: "ما تشمله الخدمة",
     includedSub: "كل ما بين الرسومات المعتمدة والمساحة المكتملة.",
     relatedProjects: "شاهد مشاريع ذات صلة ‹",
     relatedSub: "أعمال تشطيب وتجهيز في مصر وقطر.",
   },
   about: {
-    title: "عن مجموعة ريديكور",
-    sub: "تصميم داخلي وتنفيذ وتشطيب وتوريد للوحدات السكنية والفنادق والمشروعات التجارية في مصر وقطر.",
-    story: "قصتنا",
-    paras: [
-      "[قصة الشركة، الفقرة 1: متى ولماذا بدأت مجموعة ريديكور.]",
-      "[الفقرة 2: أنواع المساحات التي يصمّمها الفريق وينفّذها.]",
-      "[الفقرة 3: كيف يعمل مكتبا مصر وقطر معًا.]",
-    ],
+    title: "من نحن",
+    sub: "تقدّم مجموعة ريديكور حلولًا متكاملة في المقاولات والتشطيبات الداخلية والتوريد، تجمع بين الدقة والجودة والاهتمام بالتفاصيل.",
+    vision: "رؤيتنا",
+    visionText: "إعادة تعريف التميّز في أعمال الإنشاءات والمساحات الداخلية.",
+    mission: "مهمتنا",
+    missionText: "تحويل الأفكار إلى مساحات استثنائية من خلال الجودة والابتكار.",
     offices: "مكاتبنا",
     officesSub: "فريقان، ومعيار واحد للتشطيب.",
   },
   contact: {
-    title: "تواصل معنا",
-    sub: "أخبرنا عن مشروعك، أو زُر أحد مكاتبنا.",
+    kicker: "تواصل معنا",
+    title: "لنبنِ معًا شيئًا استثنائيًا.",
+    sub: "أخبرنا عن مشروعك القادم.",
     formTitle: "أرسل استفسارك",
     formSub: "سنرد عليك عبر وسيلة التواصل التي تفضّلها.",
   },
@@ -215,7 +213,7 @@ const ar: typeof en = {
   form: {
     name: "الاسم *", phone: "رقم الهاتف *", email: "البريد الإلكتروني", country: "الدولة *", service: "الخدمة *", type: "نوع المشروع",
     area: "المساحة التقريبية", message: "رسالتك", method: "وسيلة التواصل المفضلة", select: "اختر",
-    services: { design: "التصميم الداخلي", fitout: "التشطيبات الفاخرة والتجهيز", supply: "التوريد", unsure: "لست متأكدًا بعد" },
+    services: { contracting: "المقاولات", fitout: "التشطيبات الداخلية والتجهيز", supply: "المشتريات والتوريد", pm: "إدارة المشاريع", unsure: "لست متأكدًا بعد" },
     methods: { phone: "هاتف", whatsapp: "واتساب", email: "البريد الإلكتروني" },
     unit: "م²",
     consent: "أوافق على أن تتواصل معي مجموعة ريديكور بخصوص هذا الاستفسار.",
@@ -253,7 +251,7 @@ const ar: typeof en = {
   },
   privacy: {
     title: "سياسة الخصوصية",
-    body: "[نص سياسة الخصوصية تقدّمه مجموعة ريديكور قبل الإطلاق.]",
+    body: "نحترم خصوصيتك ونحمي المعلومات التي تشاركها معنا.",
   },
   notFound: { title: "الصفحة غير موجودة", sub: "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.", home: "العودة إلى الرئيسية" },
 };
@@ -261,96 +259,59 @@ const ar: typeof en = {
 export const dict: Record<Lang, typeof en> = { en, ar };
 export type Dict = typeof en;
 
-export type ServiceSlug = "design" | "fitout" | "supply";
+export type ServiceSlug = "contracting" | "fitout" | "supply" | "project-management";
 interface ServiceContent {
   slug: ServiceSlug;
   title: string;
   text: string;
+  /** Draft lists for the team to confirm. Empty = the section is hidden on the service page. */
   included: [string, string][];
 }
 
-// "included" lists are draft copy for the team to confirm (the design marks the fit-out list as draft too).
+const FITOUT_EN: [string, string][] = [
+  ["Ceilings & partitions", "Gypsum ceilings, bulkheads and partitions, including lighting coves."],
+  ["Flooring", "Marble, porcelain, timber and other floor finishes, laid and finished on site."],
+  ["Wall finishes", "Paint, wallpaper, cladding and decorative wall treatments."],
+  ["Joinery & doors", "Wardrobes, kitchens, panelling and doors made to the approved design."],
+  ["Services coordination", "Lighting, power and plumbing points coordinated with the finishes."],
+  ["Snagging & handover", "A final inspection and corrections before the space is handed over."],
+];
+const FITOUT_AR: [string, string][] = [
+  ["الأسقف والقواطيع", "أسقف جبس وبيوت ستائر وقواطيع، بما فيها كُرنيشات الإضاءة."],
+  ["الأرضيات", "رخام وبورسلين وخشب وتشطيبات أرضيات أخرى، تُركَّب وتُشطَّب في الموقع."],
+  ["تشطيب الحوائط", "دهانات وورق حائط وكسوات ومعالجات زخرفية للحوائط."],
+  ["النجارة والأبواب", "دواليب ومطابخ وتكسيات وأبواب تُصنع وفق التصميم المعتمد."],
+  ["تنسيق الأعمال الفنية", "نقاط الإضاءة والكهرباء والسباكة منسّقة مع التشطيبات."],
+  ["المعاينة والتسليم", "فحص نهائي وتصحيحات قبل تسليم المساحة."],
+];
+const SUPPLY_EN: [string, string][] = [
+  ["Materials", "Finishing materials sourced to the approved specification."],
+  ["Fixtures", "Lighting, sanitary ware and fittings selected with the design."],
+  ["Furniture", "Furniture sourced to suit the space and the scheme."],
+  ["Quantities & sourcing", "Quantities and suppliers agreed before ordering."],
+  ["Delivery to site", "Deliveries scheduled around site progress."],
+  ["Samples & approvals", "Samples reviewed and approved before supply."],
+];
+const SUPPLY_AR: [string, string][] = [
+  ["الخامات", "خامات تشطيب تُورَّد وفق المواصفات المعتمدة."],
+  ["التجهيزات", "إضاءة وأدوات صحية وتركيبات تُختار مع التصميم."],
+  ["الأثاث", "أثاث يُورَّد بما يناسب المساحة والتصميم."],
+  ["الكميات والتوريد", "الكميات والموردون يُتفق عليهم قبل الطلب."],
+  ["التسليم إلى الموقع", "جدولة التوريدات وفق تقدم العمل في الموقع."],
+  ["العينات والاعتماد", "مراجعة العينات واعتمادها قبل التوريد."],
+];
+
 export const services: Record<Lang, ServiceContent[]> = {
   en: [
-    {
-      slug: "design",
-      title: "Interior Design",
-      text: "Concepts, layouts and material palettes for homes, hotels, shops and offices.",
-      included: [
-        ["Concept & layouts", "Space planning shaped around how you’ll use each room."],
-        ["Material palettes", "Finishes, colours and textures selected as one coherent scheme."],
-        ["Lighting & ceilings", "Lighting and ceiling concepts that support the design."],
-        ["Joinery & furniture", "Layouts for built-in joinery and loose furniture."],
-        ["Drawings for approval", "Clear drawings and boards you can review before work begins."],
-        ["Handover to execution", "A design package ready for engineering and site works."],
-      ],
-    },
-    {
-      slug: "fitout",
-      title: "Fine Finishes & Fit-Out",
-      text: "Ceilings, floors, walls and joinery, built and finished to the approved design.",
-      included: [
-        ["Ceilings & partitions", "Gypsum ceilings, bulkheads and partitions, including lighting coves."],
-        ["Flooring", "Marble, porcelain, timber and other floor finishes, laid and finished on site."],
-        ["Wall finishes", "Paint, wallpaper, cladding and decorative wall treatments."],
-        ["Joinery & doors", "Wardrobes, kitchens, panelling and doors made to the approved design."],
-        ["Services coordination", "Lighting, power and plumbing points coordinated with the finishes."],
-        ["Snagging & handover", "A final inspection and corrections before the space is handed over."],
-      ],
-    },
-    {
-      slug: "supply",
-      title: "Supply",
-      text: "Materials, fixtures and furniture sourced and delivered to site.",
-      included: [
-        ["Materials", "Finishing materials sourced to the approved specification."],
-        ["Fixtures", "Lighting, sanitary ware and fittings selected with the design."],
-        ["Furniture", "Furniture sourced to suit the space and the scheme."],
-        ["Quantities & sourcing", "Quantities and suppliers agreed before ordering."],
-        ["Delivery to site", "Deliveries scheduled around site progress."],
-        ["Samples & approvals", "Samples reviewed and approved before supply."],
-      ],
-    },
+    { slug: "contracting", title: "Contracting", text: "Built with precision.", included: [] },
+    { slug: "fitout", title: "Interior Fit-Out", text: "Crafted to perfection.", included: FITOUT_EN },
+    { slug: "supply", title: "Procurement & Supply", text: "Quality in every selection.", included: SUPPLY_EN },
+    { slug: "project-management", title: "Project Management", text: "Seamless from start to finish.", included: [] },
   ],
   ar: [
-    {
-      slug: "design",
-      title: "التصميم الداخلي",
-      text: "مفاهيم تصميمية ومخططات ولوحات خامات للمنازل والفنادق والمحلات والمكاتب.",
-      included: [
-        ["المفهوم والمخططات", "تخطيط المساحات بما يناسب استخدامك لكل غرفة."],
-        ["لوحات الخامات", "تشطيبات وألوان وملمس تُختار كمنظومة واحدة متناسقة."],
-        ["الإضاءة والأسقف", "تصور للإضاءة والأسقف يدعم التصميم."],
-        ["النجارة والأثاث", "مخططات للنجارة المدمجة والأثاث المنفصل."],
-        ["رسومات للاعتماد", "رسومات ولوحات واضحة تراجعها قبل بدء العمل."],
-        ["التسليم للتنفيذ", "حزمة تصميم جاهزة للهندسة وأعمال الموقع."],
-      ],
-    },
-    {
-      slug: "fitout",
-      title: "التشطيبات الفاخرة والتجهيز",
-      text: "أسقف وأرضيات وحوائط وأعمال نجارة، تُنفَّذ وتُشطَّب وفق التصميم المعتمد.",
-      included: [
-        ["الأسقف والقواطيع", "أسقف جبس وبيوت ستائر وقواطيع، بما فيها كُرنيشات الإضاءة."],
-        ["الأرضيات", "رخام وبورسلين وخشب وتشطيبات أرضيات أخرى، تُركَّب وتُشطَّب في الموقع."],
-        ["تشطيب الحوائط", "دهانات وورق حائط وكسوات ومعالجات زخرفية للحوائط."],
-        ["النجارة والأبواب", "دواليب ومطابخ وتكسيات وأبواب تُصنع وفق التصميم المعتمد."],
-        ["تنسيق الأعمال الفنية", "نقاط الإضاءة والكهرباء والسباكة منسّقة مع التشطيبات."],
-        ["المعاينة والتسليم", "فحص نهائي وتصحيحات قبل تسليم المساحة."],
-      ],
-    },
-    {
-      slug: "supply",
-      title: "التوريد",
-      text: "توريد الخامات والتجهيزات والأثاث وتسليمها إلى الموقع.",
-      included: [
-        ["الخامات", "خامات تشطيب تُورَّد وفق المواصفات المعتمدة."],
-        ["التجهيزات", "إضاءة وأدوات صحية وتركيبات تُختار مع التصميم."],
-        ["الأثاث", "أثاث يُورَّد بما يناسب المساحة والتصميم."],
-        ["الكميات والتوريد", "الكميات والموردون يُتفق عليهم قبل الطلب."],
-        ["التسليم إلى الموقع", "جدولة التوريدات وفق تقدم العمل في الموقع."],
-        ["العينات والاعتماد", "مراجعة العينات واعتمادها قبل التوريد."],
-      ],
-    },
+    { slug: "contracting", title: "المقاولات", text: "تُنفَّذ بدقة.", included: [] },
+    { slug: "fitout", title: "التشطيبات الداخلية والتجهيز", text: "مصنوعة بإتقان.", included: FITOUT_AR },
+    { slug: "supply", title: "المشتريات والتوريد", text: "الجودة في كل اختيار.", included: SUPPLY_AR },
+    { slug: "project-management", title: "إدارة المشاريع", text: "بسلاسة من البداية إلى النهاية.", included: [] },
   ],
 };

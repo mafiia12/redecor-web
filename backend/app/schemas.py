@@ -8,7 +8,7 @@ from .models import Image
 
 Country = Literal["eg", "qa"]
 ProjectType = Literal["residential", "hospitality", "retail", "office"]
-Service = Literal["design", "fitout", "supply", "other", "unsure"]
+Service = Literal["contracting", "fitout", "supply", "pm", "unsure"]
 ContactMethod = Literal["phone", "whatsapp", "email"]
 EnquiryStatus = Literal["new", "contacted", "closed"]
 

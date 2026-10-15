@@ -20,14 +20,14 @@ export default function About() {
         <SitePhoto slot="about-hero" ratio="16/9" priority hint="About: team reviewing finishes on site" alt={t.about.title} sizes="(min-width:1440px) 1440px, 100vw" />
       </div>
       <section className="section">
-        <div className="container">
-          <Reveal className="section-head">
-            <h2 className="h2">{t.about.story}</h2>
+        <div className="container grid grid--2" style={{ gap: 48 }}>
+          <Reveal className="stack" >
+            <span className="kicker">{t.about.vision}</span>
+            <p className="h3 h3--xl" style={{ marginTop: 16 }}>{t.about.visionText}</p>
           </Reveal>
-          <Reveal className="prose">
-            {t.about.paras.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
+          <Reveal className="stack" delay={80}>
+            <span className="kicker">{t.about.mission}</span>
+            <p className="h3 h3--xl" style={{ marginTop: 16 }}>{t.about.missionText}</p>
           </Reveal>
         </div>
       </section>

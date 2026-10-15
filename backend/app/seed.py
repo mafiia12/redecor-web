@@ -14,11 +14,12 @@ OFFICES = {
     "eg": dict(
         address_en="[Street, district]\n[City], Egypt",
         address_ar="[الشارع، الحي]\n[المدينة]، مصر",
-        phone="[+20 XXX XXX XXXX]",
+        phone="+20 10 06602371",
         whatsapp="",
-        email="[name@domain.com]",
+        email="info@redecorgroup.com",
         hours_en="[Days · Hours]",
         hours_ar="[الأيام · الساعات]",
+        maps_url="https://www.google.com/maps?q=30.057389,31.199167",
     ),
     "qa": dict(
         address_en="[Street, zone]\n[City], Qatar",

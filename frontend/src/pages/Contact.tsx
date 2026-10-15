@@ -6,11 +6,12 @@ import { useData, useLang, usePageMeta } from "../lib/context";
 export default function Contact() {
   const { t } = useLang();
   const { data } = useData();
-  usePageMeta(`${t.contact.title} | ${t.brand}`, t.contact.sub);
+  usePageMeta(`${t.contact.kicker} | ${t.brand}`, t.contact.sub);
   return (
     <>
       <section className="page-head">
         <div className="container">
+          <span className="kicker">{t.contact.kicker}</span>
           <h1 className="display">{t.contact.title}</h1>
           <p className="lead">{t.contact.sub}</p>
         </div>

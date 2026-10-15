@@ -11,9 +11,10 @@ import { useHeroScale } from "../lib/hooks";
 import { services } from "../i18n";
 
 const SERVICE_HINTS: Record<string, string> = {
-  design: "Service: designer reviewing material samples and drawings",
+  contracting: "Service: structural and finishing works on site",
   fitout: "Service: close-up of stone floor meeting timber joinery",
   supply: "Service: curated materials and fixtures ready for delivery",
+  "project-management": "Service: project manager reviewing progress on site",
 };
 
 export default function Home() {
@@ -50,7 +51,7 @@ export default function Home() {
             <h2 className="h2" id="services-title">{t.home.servicesTitle}</h2>
             <p className="lead">{t.home.servicesSub}</p>
           </Reveal>
-          <div className="grid grid--3">
+          <div className="grid grid--4">
             {services[lang].map((s, i) => (
               <Reveal key={s.slug} delay={i * 80}>
                 <ServiceTile to={lp(`/services/${s.slug}`)} title={s.title} text={s.text} slot={`service-${s.slug}`} hint={SERVICE_HINTS[s.slug]} />

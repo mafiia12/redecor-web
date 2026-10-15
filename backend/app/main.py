@@ -77,7 +77,7 @@ def robots():
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap():
     base = settings.site_url
-    paths = ["", "/projects", "/about", "/contact", "/services/design", "/services/fitout", "/services/supply"]
+    paths = ["", "/projects", "/about", "/contact", "/services/contracting", "/services/fitout", "/services/supply", "/services/project-management"]
     with SessionLocal() as db:
         slugs = db.scalars(select(Project.slug).where(Project.published.is_(True))).all()
     paths += [f"/projects/{s}" for s in slugs]
