@@ -4,7 +4,7 @@ import { Segmented } from "../components/Filters";
 import { useData, useLang, usePageMeta } from "../lib/context";
 import type { Country, ProjectType } from "../lib/api";
 
-const TYPES: ProjectType[] = ["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public"];
+const TYPES: ProjectType[] = ["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public", "education"];
 const COUNTRIES: Country[] = ["eg", "qa", "sa"];
 
 export default function Projects() {

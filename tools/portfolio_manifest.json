@@ -25,7 +25,7 @@
       22
     ],
     "country": "eg",
-    "type": "retail",
+    "type": "office",
     "city_en": "",
     "scope_en": "Fit-out",
     "is_render": false,
@@ -44,7 +44,7 @@
     "country": "eg",
     "type": "hospitality",
     "city_en": "Marassi",
-    "scope_en": "Fit-out",
+    "scope_en": "Design & execution",
     "is_render": false,
     "featured": true,
     "summary_en": "",
@@ -61,7 +61,7 @@
     "country": "eg",
     "type": "office",
     "city_en": "Mohandessin, Giza",
-    "scope_en": "Fit-out",
+    "scope_en": "Design & execution",
     "is_render": false,
     "featured": true,
     "summary_en": "",
@@ -82,6 +82,7 @@
     "is_render": false,
     "featured": true,
     "summary_en": "",
+    "confirm": "Neo Classic Apartment (pptx) uses PDF page 67: same project or separate?",
     "sort_order": 5
   },
   {
@@ -129,7 +130,7 @@
     "country": "eg",
     "type": "hospitality",
     "city_en": "",
-    "scope_en": "Fit-out",
+    "scope_en": "Design & execution",
     "is_render": false,
     "featured": false,
     "summary_en": "",
@@ -144,7 +145,7 @@
       38
     ],
     "country": "eg",
-    "type": "retail",
+    "type": "office",
     "city_en": "",
     "scope_en": "Fit-out",
     "is_render": false,
@@ -161,12 +162,13 @@
       40
     ],
     "country": "eg",
-    "type": "retail",
+    "type": "hospitality",
     "city_en": "",
-    "scope_en": "Fit-out",
+    "scope_en": "Landscape fit-out",
     "is_render": false,
     "featured": false,
     "summary_en": "",
+    "confirm": "Type: residential / hospitality / landscape?",
     "sort_order": 10
   },
   {
@@ -180,7 +182,7 @@
     "country": "eg",
     "type": "hospitality",
     "city_en": "",
-    "scope_en": "Fit-out",
+    "scope_en": "Design & execution",
     "is_render": false,
     "featured": false,
     "summary_en": "",
@@ -197,7 +199,7 @@
     "country": "eg",
     "type": "hospitality",
     "city_en": "",
-    "scope_en": "Fit-out",
+    "scope_en": "Design & execution",
     "is_render": false,
     "featured": false,
     "summary_en": "",
@@ -246,7 +248,7 @@
       57
     ],
     "country": "eg",
-    "type": "hospitality",
+    "type": "retail",
     "city_en": "",
     "scope_en": "Fit-out",
     "is_render": false,
@@ -277,7 +279,7 @@
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
       71,
-      76
+      72
     ],
     "country": "eg",
     "type": "industrial",
@@ -287,6 +289,40 @@
     "featured": false,
     "summary_en": "",
     "sort_order": 17
+  },
+  {
+    "slug": "metropolitan-school",
+    "title_en": "Metropolitan School",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      73,
+      74
+    ],
+    "country": "eg",
+    "type": "education",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 18
+  },
+  {
+    "slug": "vapsera",
+    "title_en": "Vapsera",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      75,
+      76
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 19
   },
   {
     "slug": "ismailia-stadium",
@@ -303,7 +339,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 18
+    "sort_order": 20
   },
   {
     "slug": "el-salam-hospital",
@@ -320,7 +356,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 19
+    "sort_order": 21
   },
   {
     "slug": "oceans-breeze",
@@ -337,7 +373,7 @@
     "is_render": true,
     "featured": true,
     "summary_en": "A coastal dining experience on the Red Sea: white-washed wood accents, vintage maritime decor and large windows with sea views.",
-    "sort_order": 20
+    "sort_order": 22
   },
   {
     "slug": "villa-mountain-view",
@@ -354,7 +390,7 @@
     "is_render": true,
     "featured": true,
     "summary_en": "",
-    "sort_order": 21
+    "sort_order": 23
   },
   {
     "slug": "villa-new-capital",
@@ -371,11 +407,11 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 22
+    "sort_order": 24
   },
   {
     "slug": "residential-interiors-egypt",
-    "title_en": "Residential Interiors [name to confirm]",
+    "title_en": "Residential Interiors, Egypt [name to confirm]",
     "pdf": "Resedintial__in_egypt_Portfolio.pdf",
     "pages": [
       4,
@@ -388,7 +424,26 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 23
+    "confirm": "Project name",
+    "sort_order": 25
+  },
+  {
+    "slug": "residential-majlis-gulf",
+    "title_en": "Residential Villa, Gulf [name to confirm]",
+    "pdf": "Resedintial_in_Gulf_Portfolio.pdf",
+    "pages": [
+      4,
+      80
+    ],
+    "country": "qa",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Interior design: majlis, dining, entrance",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Project name and country (Qatar or Saudi Arabia)",
+    "sort_order": 26
   },
   {
     "slug": "fertiglobe-meeting-room",
@@ -405,7 +460,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 24
+    "sort_order": 27
   },
   {
     "slug": "fertiglobe-technology-room",
@@ -422,7 +477,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 25
+    "sort_order": 28
   },
   {
     "slug": "systel-head-office",
@@ -439,7 +494,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 26
+    "sort_order": 29
   },
   {
     "slug": "zayed-administrative-building",
@@ -456,7 +511,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 27
+    "sort_order": 30
   },
   {
     "slug": "seven-fortunes-palm-hills-design",
@@ -473,7 +528,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 28
+    "sort_order": 31
   },
   {
     "slug": "seven-fortunes-marassi-design",
@@ -490,11 +545,11 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 29
+    "sort_order": 32
   },
   {
     "slug": "chai-jmr-el-alamein",
-    "title_en": "Chai Jmr, El Alamein",
+    "title_en": "Chai Jmr, Marina El Alamein",
     "pdf": "Retail_Commerical_Portfolio.pdf",
     "pages": [
       33,
@@ -502,12 +557,12 @@
     ],
     "country": "eg",
     "type": "hospitality",
-    "city_en": "El Alamein",
+    "city_en": "Marina El Alamein",
     "scope_en": "Interior design",
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 30
+    "sort_order": 33
   },
   {
     "slug": "chai-jmr-abha",
@@ -524,7 +579,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 31
+    "sort_order": 34
   },
   {
     "slug": "jumanji-board-games-jeddah",
@@ -541,7 +596,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 32
+    "sort_order": 35
   },
   {
     "slug": "andalusia-hospitals-jeddah",
@@ -558,7 +613,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 33
+    "sort_order": 36
   },
   {
     "slug": "amanda-hair-salon-doha",
@@ -575,6 +630,276 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 34
+    "sort_order": 37
+  },
+  {
+    "slug": "the-shield",
+    "title_en": "The Shield",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      11,
+      12
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Exterior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "A contemporary headquarters concept defined by disciplined glazing, grounded stonework and a strong arrival sequence.",
+    "confirm": "Country/city; page split with Global Exchange",
+    "sort_order": 38
+  },
+  {
+    "slug": "global-exchange",
+    "title_en": "Global Exchange",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      13,
+      14
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Exterior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city; page split with The Shield",
+    "sort_order": 39
+  },
+  {
+    "slug": "sukkar-mecca-head-office",
+    "title_en": "Sukkar Mecca Head Office",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      15,
+      16
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Exterior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "A tall commercial composition where warm metallic fins, patterned screening and transparent volumes create a distinctive urban presence.",
+    "confirm": "Spelling (Sukkar/Sokkar) and city",
+    "sort_order": 40
+  },
+  {
+    "slug": "m-bag-tower",
+    "title_en": "M-BAG Tower",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      17,
+      18
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Exterior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "A sculptural tower concept using layered terraces and a luminous vertical rhythm.",
+    "confirm": "Country/city",
+    "sort_order": 41
+  },
+  {
+    "slug": "urban-cafe-strip",
+    "title_en": "Urban Café Strip",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      19,
+      20
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Exterior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "A landscaped café frontage that unifies multiple operators through a coherent material palette and active terraces.",
+    "confirm": "Country/city",
+    "sort_order": 42
+  },
+  {
+    "slug": "courtyard-villa",
+    "title_en": "Courtyard Villa",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      21,
+      22
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Exterior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "A private residence organized around water, greenery and shaded outdoor living.",
+    "confirm": "Country/city",
+    "sort_order": 43
+  },
+  {
+    "slug": "beans-cafe",
+    "title_en": "Beans Café",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      24,
+      26
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 44
+  },
+  {
+    "slug": "steak-and-stone",
+    "title_en": "Steak & Stone",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      27,
+      29
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 45
+  },
+  {
+    "slug": "cafe-wonder",
+    "title_en": "Café Wonder",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      30,
+      32
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 46
+  },
+  {
+    "slug": "skadi",
+    "title_en": "Skadi",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      33,
+      35
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "A fashion boutique concept shaped by soft tonal finishes and circular display moments.",
+    "confirm": "Country/city",
+    "sort_order": 47
+  },
+  {
+    "slug": "royal-palace-hotel",
+    "title_en": "Royal Palace Hotel",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      37,
+      41
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 48
+  },
+  {
+    "slug": "hayah-training-center",
+    "title_en": "Hayah Training Center",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      42,
+      44
+    ],
+    "country": "eg",
+    "type": "education",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 49
+  },
+  {
+    "slug": "executive-residence",
+    "title_en": "Executive Residence",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      46,
+      47
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 50
+  },
+  {
+    "slug": "grand-residence",
+    "title_en": "Grand Residence",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      48,
+      57
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city; includes “Hotel Suite” pages?",
+    "sort_order": 51
+  },
+  {
+    "slug": "noir-residence",
+    "title_en": "Noir Residence",
+    "pdf": "Redecor_Portfolio_brief.pdf",
+    "pages": [
+      58,
+      60
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Country/city",
+    "sort_order": 52
   }
 ]

@@ -67,11 +67,13 @@ def jpeg_bytes(img: Image.Image) -> bytes:
 
 
 # The manifest uses logical names; real file names vary (spaces, "&", typos), so match on a keyword.
-PDF_KEYWORDS = {
+PDF_KEYWORDS = {  # any keyword matches (case-insensitive, letters and digits only)
     "Redecor_Fit-out_projects.pdf": ["fitout"],
     "OCEANS_BREEZE.pdf": ["ocean"],
-    "Retail_Commerical_Portfolio.pdf": ["commer"],  # matches Commerical / Commercial
+    "Retail_Commerical_Portfolio.pdf": ["commer"],  # Commerical / Commercial
     "Resedintial__in_egypt_Portfolio.pdf": ["egypt"],
+    "Resedintial_in_Gulf_Portfolio.pdf": ["gulf"],
+    "Redecor_Portfolio_brief.pdf": ["breif", "brief"],
 }
 
 
@@ -79,7 +81,7 @@ def find_pdf(pdf_dir: Path, logical: str) -> Path | None:
     keys = PDF_KEYWORDS.get(logical, [])
     for f in sorted(pdf_dir.rglob("*.pdf")):
         norm = "".join(ch for ch in f.name.lower() if ch.isalnum())
-        if f.name == logical or (keys and all(k in norm for k in keys)):
+        if f.name == logical or (keys and any(k in norm for k in keys)):
             return f
     return None
 
@@ -150,7 +152,7 @@ def main():
             print("  = already exists, skipped")
             continue
         imgs = collect(p, pdf_dir, a.max_images)
-        print(f"  {len(imgs)} images")
+        print(f"  {len(imgs)} images" + (f"   ? confirm: {p['confirm']}" if p.get("confirm") else ""))
         if not imgs:
             continue
         if a.dry_run:
