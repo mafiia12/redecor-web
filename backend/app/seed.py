@@ -10,26 +10,18 @@ from .security import hash_password
 log = logging.getLogger("redecor")
 
 # Placeholders mirror the design: nothing is invented, everything is marked "[...]" until real data is entered.
+# Egypt and Qatar currently share the same contact details (confirmed by the client).
+_SHARED = dict(
+    phone="+20 10 06602371",
+    whatsapp="+20 10 06602371",
+    email="info@redecorgroup.com",
+    maps_url="https://www.google.com/maps?q=30.057389,31.199167",
+    hours_en="[Days · Hours]",
+    hours_ar="[الأيام · الساعات]",
+)
 OFFICES = {
-    "eg": dict(
-        address_en="[Street, district]\n[City], Egypt",
-        address_ar="[الشارع، الحي]\n[المدينة]، مصر",
-        phone="+20 10 06602371",
-        whatsapp="",
-        email="info@redecorgroup.com",
-        hours_en="[Days · Hours]",
-        hours_ar="[الأيام · الساعات]",
-        maps_url="https://www.google.com/maps?q=30.057389,31.199167",
-    ),
-    "qa": dict(
-        address_en="[Street, zone]\n[City], Qatar",
-        address_ar="[الشارع، المنطقة]\n[المدينة]، قطر",
-        phone="[+974 XXXX XXXX]",
-        whatsapp="",
-        email="[name@domain.com]",
-        hours_en="[Days · Hours]",
-        hours_ar="[الأيام · الساعات]",
-    ),
+    "eg": dict(address_en="[Street, district]\n[City], Egypt", address_ar="[الشارع، الحي]\n[المدينة]، مصر", **_SHARED),
+    "qa": dict(address_en="[Street, zone]\n[City], Qatar", address_ar="[الشارع، المنطقة]\n[المدينة]، قطر", **_SHARED),
 }
 
 # (country, type, is_render) in the order used by the design
@@ -48,8 +40,15 @@ DEMO_PROJECTS = [
 
 def seed(db: Session) -> None:
     for country, vals in OFFICES.items():
-        if not db.get(Office, country):
+        office = db.get(Office, country)
+        if not office:
             db.add(Office(country=country, **vals))
+            continue
+        # Fill fields that are still empty or "[placeholders]"; never overwrite real values edited in the admin.
+        for field, value in vals.items():
+            current = getattr(office, field)
+            if not current or current.startswith("["):
+                setattr(office, field, value)
 
     if settings.admin_email and settings.admin_password:
         if not db.scalar(select(User).where(User.email == settings.admin_email)):
