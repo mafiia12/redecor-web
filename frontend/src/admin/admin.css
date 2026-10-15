@@ -1,0 +1,48 @@
+.adm { min-height: 100vh; background: #f6f5f2; color: var(--ink); font-size: 15px; line-height: 1.5; }
+.adm * { letter-spacing: 0; }
+.adm-login { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.adm-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.adm-login .adm-card { width: min(400px, 100%); display: flex; flex-direction: column; gap: 16px; }
+.adm-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+@media (max-width: 800px) { .adm-shell { grid-template-columns: 1fr; } }
+.adm-side { background: var(--dark); color: var(--on-dark); padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+@media (max-width: 800px) { .adm-side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; } }
+.adm-side img { height: 32px; width: auto; margin: 0 0 16px 8px; align-self: flex-start; }
+.adm-side a, .adm-side button { color: var(--on-dark); padding: 8px 12px; border-radius: 8px; font-size: 15px; background: none; border: 0; text-align: start; cursor: pointer; }
+.adm-side a:hover, .adm-side button:hover { background: rgba(255,255,255,.1); }
+.adm-side a.active { background: rgba(255,255,255,.16); font-weight: 600; }
+.adm-side .grow { flex: 1; }
+.adm-main { padding: 32px; max-width: 1100px; width: 100%; }
+@media (max-width: 800px) { .adm-main { padding: 16px; } }
+.adm h1 { font-size: 28px; font-weight: 600; margin-bottom: 20px; }
+.adm h2 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+.adm-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.adm-bar h1 { margin: 0; }
+.adm .btn { height: 40px; font-size: 15px; padding-inline: 18px; }
+.adm .btn--sm { height: 32px; font-size: 13px; padding-inline: 12px; }
+.adm .input, .adm .select, .adm .textarea { height: 40px; font-size: 15px; border-radius: 8px; }
+.adm .textarea { height: auto; min-height: 90px; }
+.adm label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 500; }
+.adm-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.adm-grid.two { grid-template-columns: 1fr 1fr; }
+@media (max-width: 600px) { .adm-grid.two { grid-template-columns: 1fr; } }
+.adm-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.adm-table th, .adm-table td { text-align: start; padding: 10px 12px; border-bottom: 1px solid var(--surface); vertical-align: middle; }
+.adm-table th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em !important; background: var(--surface); }
+.adm-thumb { width: 56px; height: 44px; border-radius: 6px; background: var(--ph); object-fit: cover; display: block; }
+.adm-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: var(--surface); }
+.adm-tag.ok { background: #e3f1e4; color: #1b5e20; }
+.adm-tag.warn { background: #fbeed5; color: #7a4b00; }
+.adm-msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; background: #e3f1e4; color: #1b5e20; }
+.adm-msg.err { background: #fdeceb; color: var(--error); }
+.adm-imgs { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.adm-img { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.adm-img img { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--ph); }
+.adm-img .body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.adm-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.adm-check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
+.adm-drop { border: 2px dashed var(--line); border-radius: 12px; padding: 20px; text-align: center; background: #fff; color: var(--muted); }
+.adm-slot { display: grid; grid-template-columns: 160px 1fr; gap: 16px; padding: 16px; }
+@media (max-width: 600px) { .adm-slot { grid-template-columns: 1fr; } }
+.adm-slot .prev { aspect-ratio: 4/3; background: var(--ph); border-radius: 8px; overflow: hidden; display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+.adm-slot .prev img { width: 100%; height: 100%; object-fit: cover; }
