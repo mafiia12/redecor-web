@@ -66,10 +66,29 @@ def jpeg_bytes(img: Image.Image) -> bytes:
     return buf.getvalue()
 
 
+# The manifest uses logical names; real file names vary (spaces, "&", typos), so match on a keyword.
+PDF_KEYWORDS = {
+    "Redecor_Fit-out_projects.pdf": ["fitout"],
+    "OCEANS_BREEZE.pdf": ["ocean"],
+    "Retail_Commerical_Portfolio.pdf": ["commer"],  # matches Commerical / Commercial
+    "Resedintial__in_egypt_Portfolio.pdf": ["egypt"],
+}
+
+
+def find_pdf(pdf_dir: Path, logical: str) -> Path | None:
+    keys = PDF_KEYWORDS.get(logical, [])
+    for f in sorted(pdf_dir.rglob("*.pdf")):
+        norm = "".join(ch for ch in f.name.lower() if ch.isalnum())
+        if f.name == logical or (keys and all(k in norm for k in keys)):
+            return f
+    return None
+
+
 def collect(project: dict, pdf_dir: Path, max_images: int):
-    path = pdf_dir / project["pdf"]
-    if not path.exists():
-        print(f"  ! missing PDF: {path.name}")
+    path = find_pdf(pdf_dir, project["pdf"])
+    if not path:
+        found = ", ".join(f.name for f in sorted(pdf_dir.rglob("*.pdf"))) or "none"
+        print(f"  ! no PDF matching {project['pdf']!r}. PDFs found in the folder: {found}")
         return []
     doc = fitz.open(path)
     first, last = project["pages"]
