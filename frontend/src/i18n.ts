@@ -37,7 +37,7 @@ const en = {
   cta2: { title: "Planning a project?", sub: "Tell us about your space, and we’ll arrange a consultation.", wa: "Message us on WhatsApp" },
   filters: { all: "All", eg: "Egypt", qa: "Qatar", sa: "Saudi Arabia", country: "Country", type: "Project type" },
   countries: { eg: "Egypt", qa: "Qatar", sa: "Saudi Arabia" } as Record<string, string>,
-  types: { residential: "Residential", hospitality: "Hospitality", retail: "Retail", office: "Office", industrial: "Industrial", healthcare: "Healthcare", public: "Public & Sports", education: "Education" } as Record<string, string>,
+  types: { residential: "Residential", hospitality: "Hospitality", retail: "Retail", office: "Office", industrial: "Industrial", healthcare: "Healthcare", public: "Public & Sports", education: "Education", landscape: "Landscape" } as Record<string, string>,
   projects: {
     title: "Our Projects",
     description: "A showcase of craftsmanship, precision, and thoughtful execution.",
@@ -167,7 +167,7 @@ const ar: typeof en = {
   cta2: { title: "هل تخطط لمشروع؟", sub: "أخبرنا عن مساحتك وسنرتّب لك استشارة.", wa: "راسلنا على واتساب" },
   filters: { all: "الكل", eg: "مصر", qa: "قطر", sa: "السعودية", country: "الدولة", type: "نوع المشروع" },
   countries: { eg: "مصر", qa: "قطر", sa: "السعودية" },
-  types: { residential: "سكني", hospitality: "ضيافة", retail: "تجزئة", office: "مكاتب", industrial: "صناعي", healthcare: "رعاية صحية", public: "منشآت عامة ورياضية", education: "تعليمي" },
+  types: { residential: "سكني", hospitality: "ضيافة", retail: "تجزئة", office: "مكاتب", industrial: "صناعي", healthcare: "رعاية صحية", public: "منشآت عامة ورياضية", education: "تعليمي", landscape: "تنسيق مواقع" },
   projects: {
     title: "مشاريعنا",
     description: "عرض لأعمال تعكس الإتقان والدقة والتنفيذ المدروس.",

@@ -133,7 +133,7 @@ export function ProjectEdit() {
           <label className="f">City (English)<input className="input" value={v.city_en} onChange={(e) => set("city_en", e.target.value)} /></label>
           <label className="f">City (Arabic)<input className="input" dir="rtl" value={v.city_ar} onChange={(e) => set("city_ar", e.target.value)} /></label>
           <label className="f">Country<select className="select" value={v.country} onChange={(e) => set("country", e.target.value as "eg" | "qa" | "sa")}><option value="eg">Egypt</option><option value="qa">Qatar</option><option value="sa">Saudi Arabia</option></select></label>
-          <label className="f">Type<select className="select" value={v.type} onChange={(e) => set("type", e.target.value as typeof v.type)}>{["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public", "education"].map((x) => <option key={x}>{x}</option>)}</select></label>
+          <label className="f">Type<select className="select" value={v.type} onChange={(e) => set("type", e.target.value as typeof v.type)}>{["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public", "education", "landscape"].map((x) => <option key={x}>{x}</option>)}</select></label>
           <label className="f">Year<input className="input" type="number" value={v.year ?? ""} onChange={(e) => set("year", num(e.target.value))} /></label>
           <label className="f">Area (m²)<input className="input" type="number" value={v.area_m2 ?? ""} onChange={(e) => set("area_m2", num(e.target.value))} /></label>
           <label className="f">Scope (English)<input className="input" value={v.scope_en} onChange={(e) => set("scope_en", e.target.value)} /></label>

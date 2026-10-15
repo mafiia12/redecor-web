@@ -75,7 +75,7 @@ export interface AdminProject {
   city_en: string;
   city_ar: string;
   country: "eg" | "qa" | "sa";
-  type: "residential" | "hospitality" | "retail" | "office" | "industrial" | "healthcare" | "public" | "education";
+  type: "residential" | "hospitality" | "retail" | "office" | "industrial" | "healthcare" | "public" | "education" | "landscape";
   year: number | null;
   area_m2: number | null;
   scope_en: string;

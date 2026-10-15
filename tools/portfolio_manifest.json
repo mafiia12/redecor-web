@@ -73,7 +73,7 @@
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
       63,
-      67
+      66
     ],
     "country": "eg",
     "type": "residential",
@@ -82,8 +82,25 @@
     "is_render": false,
     "featured": true,
     "summary_en": "",
-    "confirm": "Neo Classic Apartment (pptx) uses PDF page 67: same project or separate?",
     "sort_order": 5
+  },
+  {
+    "slug": "neo-classic-apartment",
+    "title_en": "Neo Classic Apartment",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      67,
+      67
+    ],
+    "all_images": true,
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 6
   },
   {
     "slug": "kasrawy-group-factory-head-office",
@@ -100,24 +117,36 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 6
+    "sort_order": 7
   },
   {
-    "slug": "sokkar-mecca-port-said",
-    "title_en": "Sokkar Mecca, Port Said Branch",
-    "pdf": "Redecor_Fit-out_projects.pdf",
-    "pages": [
-      14,
-      16
-    ],
+    "slug": "sokkar-mecca",
+    "title_en": "Sokkar Mecca",
     "country": "eg",
     "type": "retail",
-    "city_en": "Port Said",
-    "scope_en": "Renovation",
+    "city_en": "",
+    "scope_en": "Head office façade design and Port Said branch renovation",
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 7
+    "sources": [
+      {
+        "pdf": "Redecor_Fit-out_projects.pdf",
+        "pages": [
+          14,
+          16
+        ]
+      },
+      {
+        "pdf": "Redecor_Portfolio_brief.pdf",
+        "pages": [
+          15,
+          16
+        ],
+        "render": true
+      }
+    ],
+    "sort_order": 8
   },
   {
     "slug": "seven-fortunes-walk-of-cairo",
@@ -134,7 +163,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 8
+    "sort_order": 9
   },
   {
     "slug": "tanmeyah-imbaba-mazghouna",
@@ -151,7 +180,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 9
+    "sort_order": 10
   },
   {
     "slug": "zahraa-al-maadi-fifth-square",
@@ -162,14 +191,14 @@
       40
     ],
     "country": "eg",
-    "type": "hospitality",
+    "type": "landscape",
     "city_en": "",
     "scope_en": "Landscape fit-out",
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "confirm": "Type: residential / hospitality / landscape?",
-    "sort_order": 10
+    "sort_order": 11,
+    "scope": "Landscape"
   },
   {
     "slug": "be-babel",
@@ -186,7 +215,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 11
+    "sort_order": 12
   },
   {
     "slug": "seven-fortunes-north-lane",
@@ -203,7 +232,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 12
+    "sort_order": 13
   },
   {
     "slug": "i-score-hub",
@@ -220,7 +249,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 13
+    "sort_order": 14
   },
   {
     "slug": "chai-jmr-mamsha-ahl-masr",
@@ -237,7 +266,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 14
+    "sort_order": 15
   },
   {
     "slug": "shorosh",
@@ -254,7 +283,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 15
+    "sort_order": 16
   },
   {
     "slug": "al-kbous-factory",
@@ -271,7 +300,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 16
+    "sort_order": 17
   },
   {
     "slug": "october-dry-port",
@@ -288,7 +317,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 17
+    "sort_order": 18
   },
   {
     "slug": "metropolitan-school",
@@ -305,7 +334,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 18
+    "sort_order": 19
   },
   {
     "slug": "vapsera",
@@ -322,7 +351,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 19
+    "sort_order": 20
   },
   {
     "slug": "ismailia-stadium",
@@ -339,7 +368,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 20
+    "sort_order": 21
   },
   {
     "slug": "el-salam-hospital",
@@ -356,7 +385,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 21
+    "sort_order": 22
   },
   {
     "slug": "oceans-breeze",
@@ -373,7 +402,7 @@
     "is_render": true,
     "featured": true,
     "summary_en": "A coastal dining experience on the Red Sea: white-washed wood accents, vintage maritime decor and large windows with sea views.",
-    "sort_order": 22
+    "sort_order": 23
   },
   {
     "slug": "villa-mountain-view",
@@ -390,7 +419,7 @@
     "is_render": true,
     "featured": true,
     "summary_en": "",
-    "sort_order": 23
+    "sort_order": 24
   },
   {
     "slug": "villa-new-capital",
@@ -407,7 +436,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 24
+    "sort_order": 25
   },
   {
     "slug": "residential-interiors-egypt",
@@ -425,7 +454,7 @@
     "featured": false,
     "summary_en": "",
     "confirm": "Project name",
-    "sort_order": 25
+    "sort_order": 26
   },
   {
     "slug": "residential-majlis-gulf",
@@ -442,8 +471,8 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Project name and country (Qatar or Saudi Arabia)",
-    "sort_order": 26
+    "confirm": "Project name",
+    "sort_order": 27
   },
   {
     "slug": "fertiglobe-meeting-room",
@@ -460,7 +489,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 27
+    "sort_order": 28
   },
   {
     "slug": "fertiglobe-technology-room",
@@ -477,7 +506,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 28
+    "sort_order": 29
   },
   {
     "slug": "systel-head-office",
@@ -494,7 +523,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 29
+    "sort_order": 30
   },
   {
     "slug": "zayed-administrative-building",
@@ -511,7 +540,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 30
+    "sort_order": 31
   },
   {
     "slug": "seven-fortunes-palm-hills-design",
@@ -528,7 +557,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 31
+    "sort_order": 32
   },
   {
     "slug": "seven-fortunes-marassi-design",
@@ -545,7 +574,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 32
+    "sort_order": 33
   },
   {
     "slug": "chai-jmr-el-alamein",
@@ -562,7 +591,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 33
+    "sort_order": 34
   },
   {
     "slug": "chai-jmr-abha",
@@ -579,7 +608,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 34
+    "sort_order": 35
   },
   {
     "slug": "jumanji-board-games-jeddah",
@@ -596,7 +625,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 35
+    "sort_order": 36
   },
   {
     "slug": "andalusia-hospitals-jeddah",
@@ -613,7 +642,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 36
+    "sort_order": 37
   },
   {
     "slug": "amanda-hair-salon-doha",
@@ -630,7 +659,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 37
+    "sort_order": 38
   },
   {
     "slug": "the-shield",
@@ -648,7 +677,7 @@
     "featured": false,
     "summary_en": "A contemporary headquarters concept defined by disciplined glazing, grounded stonework and a strong arrival sequence.",
     "confirm": "Country/city; page split with Global Exchange",
-    "sort_order": 38
+    "sort_order": 39
   },
   {
     "slug": "global-exchange",
@@ -666,24 +695,6 @@
     "featured": false,
     "summary_en": "",
     "confirm": "Country/city; page split with The Shield",
-    "sort_order": 39
-  },
-  {
-    "slug": "sukkar-mecca-head-office",
-    "title_en": "Sukkar Mecca Head Office",
-    "pdf": "Redecor_Portfolio_brief.pdf",
-    "pages": [
-      15,
-      16
-    ],
-    "country": "eg",
-    "type": "retail",
-    "city_en": "",
-    "scope_en": "Exterior design",
-    "is_render": true,
-    "featured": false,
-    "summary_en": "A tall commercial composition where warm metallic fins, patterned screening and transparent volumes create a distinctive urban presence.",
-    "confirm": "Spelling (Sukkar/Sokkar) and city",
     "sort_order": 40
   },
   {

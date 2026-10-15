@@ -27,9 +27,9 @@ MIN_SIDE = 700  # ignore logos / icons smaller than this
 MAX_W = 2400
 
 
-def page_image(doc, page, seen: set[str]) -> Image.Image | None:
-    """Largest embedded picture on the page, else a render of the page itself."""
-    best = None
+def page_images(doc, page, seen: set[str], all_images: bool = False) -> list[Image.Image]:
+    """Largest embedded picture on the page (or every large picture), else a render of the page."""
+    found = []
     for info in page.get_images(full=True):
         xref = info[0]
         try:
@@ -38,26 +38,30 @@ def page_image(doc, page, seen: set[str]) -> Image.Image | None:
                 pix = fitz.Pixmap(fitz.csRGB, pix)
             if min(pix.width, pix.height) < MIN_SIDE:
                 continue
-            area = pix.width * pix.height
-            if not best or area > best[0]:
-                best = (area, pix)
+            found.append((pix.width * pix.height, pix))
         except Exception:
             continue
-    if best:
-        img = Image.open(io.BytesIO(best[1].tobytes("png"))).convert("RGB")
+    found.sort(key=lambda t: -t[0])
+    imgs = []
+    if found:
+        for _, pix in (found if all_images else found[:1]):
+            imgs.append(Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB"))
     else:
         zoom = 1800 / page.rect.width
         pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
         img = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB")
-        if img.getextrema() == ((255, 255),) * 3:  # blank page
-            return None
-    digest = hashlib.md5(img.resize((32, 32)).tobytes()).hexdigest()
-    if digest in seen:  # same picture repeated on several pages
-        return None
-    seen.add(digest)
-    if img.width > MAX_W:
-        img = img.resize((MAX_W, round(img.height * MAX_W / img.width)), Image.LANCZOS)
-    return img
+        if img.getextrema() != ((255, 255),) * 3:  # skip blank pages
+            imgs.append(img)
+    out = []
+    for img in imgs:
+        digest = hashlib.md5(img.resize((32, 32)).tobytes()).hexdigest()
+        if digest in seen:  # same picture repeated on several pages
+            continue
+        seen.add(digest)
+        if img.width > MAX_W:
+            img = img.resize((MAX_W, round(img.height * MAX_W / img.width)), Image.LANCZOS)
+        out.append(img)
+    return out
 
 
 def jpeg_bytes(img: Image.Image) -> bytes:
@@ -87,19 +91,21 @@ def find_pdf(pdf_dir: Path, logical: str) -> Path | None:
 
 
 def collect(project: dict, pdf_dir: Path, max_images: int):
-    path = find_pdf(pdf_dir, project["pdf"])
-    if not path:
-        found = ", ".join(f.name for f in sorted(pdf_dir.rglob("*.pdf"))) or "none"
-        print(f"  ! no PDF matching {project['pdf']!r}. PDFs found in the folder: {found}")
-        return []
-    doc = fitz.open(path)
-    first, last = project["pages"]
-    seen: set[str] = set()
+    """Returns [(label, image, is_render)] across every source of the project."""
+    sources = project.get("sources") or [{"pdf": project["pdf"], "pages": project["pages"]}]
     out = []
-    for n in range(first, min(last, len(doc)) + 1):
-        img = page_image(doc, doc[n - 1], seen)
-        if img:
-            out.append((n, img))
+    seen: set[str] = set()
+    for src in sources:
+        path = find_pdf(pdf_dir, src["pdf"])
+        if not path:
+            found = ", ".join(f.name for f in sorted(pdf_dir.rglob("*.pdf"))) or "none"
+            print(f"  ! no PDF matching {src['pdf']!r}. PDFs found in the folder: {found}")
+            continue
+        doc = fitz.open(path)
+        first, last = src["pages"]
+        for n in range(first, min(last, len(doc)) + 1):
+            for k, img in enumerate(page_images(doc, doc[n - 1], seen, project.get("all_images", False))):
+                out.append((f"{n}{'abcdefgh'[k] if k else ''}", img, bool(src.get("render"))))
     if len(out) > max_images:  # keep an even spread through the project
         step = len(out) / max_images
         out = [out[int(i * step)] for i in range(max_images)]
@@ -147,7 +153,8 @@ def main():
 
     sheet: list[str] = []
     for p in projects:
-        print(f"\n{p['title_en']}  ({p['pdf']} p.{p['pages'][0]}-{p['pages'][1]})")
+        src_label = "; ".join(f"{x['pdf']} p.{x['pages'][0]}-{x['pages'][1]}" for x in (p.get("sources") or [p]))
+        print(f"\n{p['title_en']}  ({src_label})")
         if p["slug"] in existing:
             print("  = already exists, skipped")
             continue
@@ -159,13 +166,13 @@ def main():
             d = Path("portfolio_preview") / p["slug"]
             d.mkdir(parents=True, exist_ok=True)
             cells = []
-            for n, img in imgs:
+            for i, (n, img, _) in enumerate(imgs):
                 img.thumbnail((900, 900))
-                img.save(d / f"p{n:03d}.jpg", quality=80)
-                cells.append(f'<figure><img src="{p["slug"]}/p{n:03d}.jpg" loading="lazy"><figcaption>page {n}</figcaption></figure>')
+                img.save(d / f"{i:03d}.jpg", quality=80)
+                cells.append(f'<figure><img src="{p["slug"]}/{i:03d}.jpg" loading="lazy"><figcaption>page {n}</figcaption></figure>')
             sheet.append(
                 f'<section><h2>{p["title_en"]} <small>{p["country"].upper()} · {p["type"]} · {"render" if p["is_render"] else "executed"} · '
-                f'{p["pdf"]} p.{p["pages"][0]}-{p["pages"][1]} · {len(imgs)} images</small></h2><div class="g">{"".join(cells)}</div></section>'
+                f'{src_label} · {len(imgs)} images</small></h2><div class="g">{"".join(cells)}</div></section>'
             )
             continue
         body = {k: p[k] for k in ("slug", "title_en", "country", "type", "city_en", "scope_en", "summary_en", "is_render", "featured", "sort_order")}
@@ -176,11 +183,15 @@ def main():
             continue
         pid = r.json()["id"]
         for i in range(0, len(imgs), 8):  # small batches keep requests light
-            files = [("files", (f"p{n:03d}.jpg", jpeg_bytes(img), "image/jpeg")) for n, img in imgs[i : i + 8]]
+            batch = imgs[i : i + 8]
+            files = [("files", (f"{n}.jpg", jpeg_bytes(img), "image/jpeg")) for n, img, _ in batch]
             r = s.post(f"{a.api}/api/admin/projects/{pid}/images", files=files)
             if r.status_code != 201:
                 print("  ! upload failed:", r.text)
                 break
+            for rec, (_, _, is_render) in zip(r.json(), batch):  # flag renders inside mixed projects
+                if is_render:
+                    s.patch(f"{a.api}/api/admin/project-images/{rec['id']}", json={"is_render": True})
         print("  ✓ uploaded", "(published)" if a.publish else "(hidden: review in /admin)")
 
     if a.dry_run and sheet:
