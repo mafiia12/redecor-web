@@ -20,6 +20,19 @@ export default function About() {
         <SitePhoto slot="about-hero" ratio="16/9" priority hint="About: team reviewing finishes on site" alt={t.about.title} sizes="(min-width:1440px) 1440px, 100vw" />
       </div>
       <section className="section">
+        <div className="container">
+          <Reveal className="prose">
+            <p>
+              {t.about.p1[0]}
+              <strong>{t.about.p1[1]}</strong>
+              {t.about.p1[2]}
+            </p>
+            <p>{t.about.p2}</p>
+            <p className="h3" style={{ color: "var(--accent)", marginTop: 16 }}>{t.about.closing}</p>
+          </Reveal>
+        </div>
+      </section>
+      <section className="section section--surface">
         <div className="container grid grid--2" style={{ gap: 48 }}>
           <Reveal className="stack" >
             <span className="kicker">{t.about.vision}</span>
