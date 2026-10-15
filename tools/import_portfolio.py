@@ -143,6 +143,7 @@ def main():
                 if c["name"].startswith("["):
                     s.delete(f"{a.api}/api/admin/clients/{c['id']}")
 
+    sheet: list[str] = []
     for p in projects:
         print(f"\n{p['title_en']}  ({p['pdf']} p.{p['pages'][0]}-{p['pages'][1]})")
         if p["slug"] in existing:
@@ -155,9 +156,15 @@ def main():
         if a.dry_run:
             d = Path("portfolio_preview") / p["slug"]
             d.mkdir(parents=True, exist_ok=True)
+            cells = []
             for n, img in imgs:
                 img.thumbnail((900, 900))
                 img.save(d / f"p{n:03d}.jpg", quality=80)
+                cells.append(f'<figure><img src="{p["slug"]}/p{n:03d}.jpg" loading="lazy"><figcaption>page {n}</figcaption></figure>')
+            sheet.append(
+                f'<section><h2>{p["title_en"]} <small>{p["country"].upper()} · {p["type"]} · {"render" if p["is_render"] else "executed"} · '
+                f'{p["pdf"]} p.{p["pages"][0]}-{p["pages"][1]} · {len(imgs)} images</small></h2><div class="g">{"".join(cells)}</div></section>'
+            )
             continue
         body = {k: p[k] for k in ("slug", "title_en", "country", "type", "city_en", "scope_en", "summary_en", "is_render", "featured", "sort_order")}
         body["published"] = a.publish
@@ -173,6 +180,16 @@ def main():
                 print("  ! upload failed:", r.text)
                 break
         print("  ✓ uploaded", "(published)" if a.publish else "(hidden: review in /admin)")
+
+    if a.dry_run and sheet:
+        html = (
+            '<meta charset="utf-8"><title>Portfolio preview</title><style>body{font:14px system-ui;margin:24px;background:#fafaf8}'
+            'h2{margin:32px 0 8px}small{font-weight:400;color:#666}.g{display:flex;flex-wrap:wrap;gap:8px}'
+            'figure{margin:0;width:220px}img{width:220px;height:150px;object-fit:cover;border-radius:8px;background:#ddd}'
+            'figcaption{font-size:12px;color:#666}</style><h1>Portfolio preview</h1>' + "".join(sheet)
+        )
+        Path("portfolio_preview/index.html").write_text(html, encoding="utf-8")
+        print("\nOpen portfolio_preview\\index.html in your browser to review every project.")
 
 
 if __name__ == "__main__":
