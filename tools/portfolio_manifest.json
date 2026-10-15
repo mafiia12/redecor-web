@@ -440,7 +440,7 @@
   },
   {
     "slug": "residential-interiors-egypt",
-    "title_en": "Residential Interiors, Egypt [name to confirm]",
+    "title_en": "Residential Interiors, Egypt",
     "pdf": "Resedintial__in_egypt_Portfolio.pdf",
     "pages": [
       4,
@@ -453,12 +453,11 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Project name",
     "sort_order": 26
   },
   {
-    "slug": "residential-majlis-gulf",
-    "title_en": "Residential Villa, Gulf [name to confirm]",
+    "slug": "residential-apartments-qatar",
+    "title_en": "Residential Apartments, Qatar",
     "pdf": "Resedintial_in_Gulf_Portfolio.pdf",
     "pages": [
       4,
@@ -467,11 +466,10 @@
     "country": "qa",
     "type": "residential",
     "city_en": "",
-    "scope_en": "Interior design: majlis, dining, entrance",
+    "scope_en": "Interior design: apartments, majlis, dining, entrance and home offices",
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Project name",
     "sort_order": 27
   },
   {
@@ -676,7 +674,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "A contemporary headquarters concept defined by disciplined glazing, grounded stonework and a strong arrival sequence.",
-    "confirm": "Country/city; page split with Global Exchange",
+    "confirm": "Page split between the two projects (11-14)",
     "sort_order": 39
   },
   {
@@ -694,7 +692,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city; page split with The Shield",
+    "confirm": "Page split between the two projects (11-14)",
     "sort_order": 40
   },
   {
@@ -712,7 +710,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "A sculptural tower concept using layered terraces and a luminous vertical rhythm.",
-    "confirm": "Country/city",
     "sort_order": 41
   },
   {
@@ -730,7 +727,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "A landscaped café frontage that unifies multiple operators through a coherent material palette and active terraces.",
-    "confirm": "Country/city",
     "sort_order": 42
   },
   {
@@ -748,7 +744,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "A private residence organized around water, greenery and shaded outdoor living.",
-    "confirm": "Country/city",
     "sort_order": 43
   },
   {
@@ -766,7 +761,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 44
   },
   {
@@ -784,7 +778,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 45
   },
   {
@@ -802,7 +795,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 46
   },
   {
@@ -820,7 +812,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "A fashion boutique concept shaped by soft tonal finishes and circular display moments.",
-    "confirm": "Country/city",
     "sort_order": 47
   },
   {
@@ -838,7 +829,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 48
   },
   {
@@ -856,7 +846,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 49
   },
   {
@@ -874,7 +863,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 50
   },
   {
@@ -892,7 +880,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city; includes “Hotel Suite” pages?",
     "sort_order": 51
   },
   {
@@ -910,7 +897,6 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "confirm": "Country/city",
     "sort_order": 52
   }
 ]
