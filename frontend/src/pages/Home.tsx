@@ -5,6 +5,7 @@ import { Segmented } from "../components/Filters";
 import { ClientWall } from "../components/ClientWall";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
+import { ProjectStrip } from "../components/ProjectStrip";
 import { Reveal } from "../components/Reveal";
 import { useData, useLang, usePageMeta } from "../lib/context";
 import type { Country } from "../lib/api";
@@ -25,6 +26,8 @@ export default function Home() {
   const heroRef = useHeroScale<HTMLDivElement>();
   usePageMeta(t.home.title, t.home.description);
 
+  const strip = useMemo(() => (data?.projects ?? []).filter((p) => p.featured && p.cover).slice(0, 8), [data]);
+
   const featured = useMemo(() => {
     const all = (data?.projects ?? []).filter((p) => p.featured);
     return all.filter((p) => country === "all" || p.country === country).slice(0, 6);
@@ -32,6 +35,21 @@ export default function Home() {
 
   return (
     <>
+      {strip.length >= 3 ? (
+        <>
+          <ProjectStrip projects={strip} />
+          <section className="intro">
+            <div className="container">
+              <h1 className="display">{t.home.h1}</h1>
+              <p className="lead" style={{ maxWidth: 720 }}>{t.home.sub}</p>
+              <div className="btn-row center btn-row--stack" style={{ marginTop: 12 }}>
+                <Link to={lp("/contact")} className="btn">{t.cta}</Link>
+                <Link to={lp("/projects")} className="link">{t.home.seeProjects}</Link>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : (
       <section className="hero" data-dark>
         <div className="hero__copy">
           <h1 className="display">{t.home.h1}</h1>
@@ -45,6 +63,7 @@ export default function Home() {
           <SitePhoto hideIfEmpty slot="home-hero" ratio="16/9" dark priority alt={t.home.heroAlt} hint="Hero: finished villa living room, warm daylight" sizes="(min-width:1440px) 1440px, 100vw" />
         </div>
       </section>
+      )}
 
       <section className="section" aria-labelledby="services-title">
         <div className="container">

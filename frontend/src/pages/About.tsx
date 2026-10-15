@@ -11,26 +11,23 @@ export default function About() {
   usePageMeta(`${t.about.title} | ${t.brand}`, t.about.sub);
   return (
     <>
-      <section className="page-head">
-        <div className="container">
-          <h1 className="display">{t.about.title}</h1>
-          <p className="lead">{t.about.sub}</p>
+      <section className="about-hero">
+        <div className="about-hero__text">
+          <h1 className="about-hero__title">
+            {t.about.name}
+            <span>{t.about.label}</span>
+          </h1>
+          <h2 className="about-hero__sub">{t.about.sub}</h2>
+          <p>
+            {t.about.p1[0]}
+            <strong style={{ color: "var(--ink)" }}>{t.about.p1[1]}</strong>
+            {t.about.p1[2]}
+          </p>
+          <p>{t.about.p2}</p>
+          <p className="about-hero__closing">{t.about.closing}</p>
         </div>
-      </section>
-      <div className="cover ratio-mobile-45">
-        <SitePhoto hideIfEmpty slot="about-hero" ratio="16/9" priority hint="About: team reviewing finishes on site" alt={t.about.title} sizes="(min-width:1440px) 1440px, 100vw" />
-      </div>
-      <section className="section">
-        <div className="container">
-          <Reveal className="prose">
-            <p>
-              {t.about.p1[0]}
-              <strong>{t.about.p1[1]}</strong>
-              {t.about.p1[2]}
-            </p>
-            <p>{t.about.p2}</p>
-            <p className="h3" style={{ color: "var(--accent)", marginTop: 16 }}>{t.about.closing}</p>
-          </Reveal>
+        <div className="about-hero__img">
+          <SitePhoto hideIfEmpty slot="about-hero" ratio="4/5" priority alt={t.about.title} sizes="(min-width:900px) 45vw, 100vw" />
         </div>
       </section>
       <section className="section section--surface" aria-label={t.about.title}>

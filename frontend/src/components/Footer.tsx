@@ -1,17 +1,19 @@
 import { Link } from "react-router-dom";
 import { SOCIAL } from "../config";
-import { pick, useData, useLang } from "../lib/context";
-
-const ICONS: Record<string, string> = {
-  LinkedIn: "M6 3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z M8 10.5v6 M8 7.6v.1 M11.5 16.5v-6 M11.5 13.2c0-1.6 1.1-2.7 2.5-2.7s2.5 1.1 2.5 2.7v3.3",
-  Facebook: "M15.5 3.5H14a3.5 3.5 0 0 0-3.5 3.5v13.5 M7.5 10.5h7.5",
-  Instagram: "M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4z M12 8.25a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 1 0 0-7.5z M17.3 6.6v.1",
-  TikTok: "M13.5 3v11.25a3.75 3.75 0 1 1-3.75-3.75 M13.5 3c.4 2.6 2.4 4.6 5 4.9",
-};
+import { isRealNumber, pick, useData, useLang, waDigits } from "../lib/context";
+import { SitePhoto } from "./Photo";
 
 export function Footer() {
   const { t, lp, lang } = useLang();
-  const { office } = useData();
+  const { data } = useData();
+  const offices = data?.offices ?? [];
+  const real = (v: string) => !!v && !v.includes("[");
+  const unique = (xs: string[]) => [...new Set(xs.filter(real))];
+
+  const locations = offices.map((o) => pick(o, "address", lang)).filter(real);
+  const emails = unique(offices.map((o) => o.email));
+  const phones = unique(offices.map((o) => o.phone));
+  const socials = Object.entries(SOCIAL).filter(([, url]) => url);
   const nav = [
     [t.nav.services, lp("/services/fitout")],
     [t.nav.projects, lp("/projects")],
@@ -19,58 +21,56 @@ export function Footer() {
     [t.nav.clients, lp("/#clients")],
     [t.nav.contact, lp("/contact")],
   ];
-  const socials = Object.entries(SOCIAL).filter(([, url]) => url);
 
   return (
     <footer className="footer" data-dark>
-      <div className="container">
-        <div className="footer__grid">
-          <div className="footer__brand">
-            <img src="/logo-light.svg" alt={t.brand} width={68} height={40} loading="lazy" />
-            <p>{t.footer.tagline}</p>
-            {socials.length > 0 && (
-              <div className="footer__social" aria-label={t.footer.social}>
-                {socials.map(([name, url]) => (
-                  <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d={ICONS[name]} />
-                    </svg>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <h3>{t.footer.explore}</h3>
-            <ul>
-              {nav.map(([label, to]) => (
-                <li key={to}>
-                  <Link to={to}>{label}</Link>
-                </li>
+      <div className="footer__split">
+        <div className="footer__left">
+          <SitePhoto slot="footer-bg" ratio="16/9" alt="" sizes="(min-width:900px) 66vw, 100vw" />
+          <h2 className="footer__name">{t.brand}</h2>
+          <div className="footer__cols">
+            <div>
+              <h3>{t.footer.location}</h3>
+              {(locations.length ? locations : [t.brand]).slice(0, 2).map((l) => (
+                <p key={l} style={{ marginBottom: 12 }}>{l}</p>
               ))}
-            </ul>
+            </div>
+            <div>
+              <h3>{t.footer.message}</h3>
+              {emails.map((e) => (
+                <p key={e}><a href={`mailto:${e}`}>{e}</a></p>
+              ))}
+            </div>
+            <div>
+              <h3>{t.footer.contact}</h3>
+              {phones.map((n) => (
+                <p key={n} dir="ltr" style={{ textAlign: lang === "ar" ? "right" : "left" }}>
+                  {isRealNumber(n) ? <a href={`tel:+${waDigits(n)}`}>{n}</a> : n}
+                </p>
+              ))}
+            </div>
           </div>
-          {(["eg", "qa"] as const).map((c) => {
-            const o = office(c);
-            return (
-              <div key={c}>
-                <h3>{c === "eg" ? t.footer.egypt : t.footer.qatar}</h3>
-                {o && (
-                  <address>
-                    <span style={{ whiteSpace: "pre-line" }}>{pick(o, "address", lang)}</span>
-                    <br />
-                    <span className="ltr">{o.phone}</span>
-                    <br />
-                    <span className="ltr">{o.email}</span>
-                  </address>
-                )}
-              </div>
-            );
-          })}
         </div>
-        <div className="footer__bottom">
-          <span>{t.footer.copyright}</span>
-          <span style={{ display: "flex", gap: 24 }}>
+        <div className="footer__right">
+          <h3>{t.footer.follow}</h3>
+          <ul className="footer__social-list" aria-label={t.footer.social}>
+            {socials.map(([name, url]) => (
+              <li key={name}>
+                <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div className="footer__sub">
+        <div className="container footer__bottom" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: "12px 24px" }}>
+          <nav aria-label="Footer" style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px" }}>
+            {nav.map(([label, to]) => (
+              <Link key={to} to={to}>{label}</Link>
+            ))}
+          </nav>
+          <span style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", alignItems: "center" }}>
+            <span style={{ color: "var(--faint-dark)", fontSize: 14 }}>{t.footer.copyright}</span>
             <Link to={lp("/privacy")}>{t.footer.privacy}</Link>
             <Link to="/admin">{t.footer.staff}</Link>
           </span>
