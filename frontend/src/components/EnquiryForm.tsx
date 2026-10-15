@@ -46,7 +46,7 @@ export function EnquiryForm() {
 
   const set = <K extends keyof Values>(k: K, val: Values[K]) => {
     const next = { ...v, [k]: val };
-    if (k === "country" && !codeTouched) next.code = val === "qa" ? "+974" : "+20";
+    if (k === "country" && !codeTouched) next.code = val === "qa" ? "+974" : val === "sa" ? "+966" : "+20";
     setV(next);
     // Errors clear as each field is fixed.
     if (hasErrors) setErrs(validate(next));
@@ -160,6 +160,7 @@ export function EnquiryForm() {
           >
             <option value="+20">+20</option>
             <option value="+974">+974</option>
+            <option value="+966">+966</option>
           </select>
           <input id="f-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel-national" className="input ltr-input" placeholder={f.phonePh} value={v.phone} onChange={(e) => set("phone", e.target.value)} aria-invalid={bad("phone")} aria-describedby={desc("phone")} maxLength={30} />
         </div>
@@ -178,6 +179,7 @@ export function EnquiryForm() {
           <option value="">{f.select}</option>
           <option value="eg">{t.countries.eg}</option>
           <option value="qa">{t.countries.qa}</option>
+          <option value="sa">{t.countries.sa}</option>
         </select>
         {errMsg("country")}
       </div>

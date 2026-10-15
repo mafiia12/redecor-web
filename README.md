@@ -30,6 +30,15 @@ Sign in at `/admin` (footer "Staff Login"):
 
 Uploads are validated, auto-rotated, metadata-stripped and converted to responsive WebP (480-2400 px) with a year-long immutable cache.
 
+## Importing the portfolio PDFs (images + project data)
+`tools/import_portfolio.py` pulls the best picture from each PDF page of a project (page ranges are in `tools/portfolio_manifest.json`) and uploads it through the admin API. Run it where the PDFs are, with the backend running:
+```bash
+pip install -r tools/requirements.txt
+python tools/import_portfolio.py --pdf-dir "D:\Master Web (Redecor)" --dry-run     # previews in ./portfolio_preview
+python tools/import_portfolio.py --pdf-dir "D:\Master Web (Redecor)" --email ADMIN_EMAIL --replace-demo
+```
+Projects are created hidden; review them in `/admin`, then tick Published (or rerun with `--publish`). Edit the manifest first if names, countries, types or page ranges are wrong.
+
 ## Performance choices
 One `/api/bootstrap` call (ETag + sessionStorage) for first paint; route-level code splitting (admin code never loads on the public site); self-hosted fonts; lazy `srcset` images with reserved aspect ratios (no layout shift); gzip; reduced-motion respected.
 

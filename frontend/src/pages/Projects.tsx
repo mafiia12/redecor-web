@@ -2,9 +2,10 @@ import { useSearchParams } from "react-router-dom";
 import { ProjectCard, ProjectGridSkeleton } from "../components/Cards";
 import { Segmented } from "../components/Filters";
 import { useData, useLang, usePageMeta } from "../lib/context";
-import type { ProjectType } from "../lib/api";
+import type { Country, ProjectType } from "../lib/api";
 
-const TYPES: ProjectType[] = ["residential", "hospitality", "retail", "office"];
+const TYPES: ProjectType[] = ["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public"];
+const COUNTRIES: Country[] = ["eg", "qa", "sa"];
 
 export default function Projects() {
   const { t } = useLang();
@@ -15,7 +16,7 @@ export default function Projects() {
   // Filters live in the URL (?country=qa&type=office) so filtered views can be shared.
   const rawCountry = params.get("country");
   const rawType = params.get("type");
-  const country = rawCountry === "eg" || rawCountry === "qa" ? rawCountry : "all";
+  const country = COUNTRIES.includes(rawCountry as Country) ? (rawCountry as Country) : "all";
   const type = TYPES.includes(rawType as ProjectType) ? (rawType as ProjectType) : "all";
 
   const update = (key: "country" | "type", value: string) => {
@@ -25,6 +26,10 @@ export default function Projects() {
     setParams(next, { replace: true });
   };
 
+  // Only offer filters that have projects (the empty state stays reachable through the URL).
+  const all = data?.projects ?? [];
+  const countries = COUNTRIES.filter((c) => all.some((p) => p.country === c));
+  const types = TYPES.filter((x) => all.some((p) => p.type === x));
   const list = (data?.projects ?? []).filter((p) => (country === "all" || p.country === country) && (type === "all" || p.type === type));
 
   return (
@@ -42,17 +47,13 @@ export default function Projects() {
               label={t.filters.country}
               value={country}
               onChange={(v) => update("country", v)}
-              options={[
-                { value: "all", label: t.filters.all },
-                { value: "eg", label: t.filters.eg },
-                { value: "qa", label: t.filters.qa },
-              ]}
+              options={[{ value: "all" as const, label: t.filters.all }, ...countries.map((v) => ({ value: v, label: t.filters[v] }))]}
             />
             <Segmented
               label={t.filters.type}
               value={type}
               onChange={(v) => update("type", v)}
-              options={[{ value: "all" as const, label: t.filters.all }, ...TYPES.map((v) => ({ value: v, label: t.types[v] }))]}
+              options={[{ value: "all" as const, label: t.filters.all }, ...types.map((v) => ({ value: v, label: t.types[v] }))]}
             />
             {data && <span className="caption count" aria-live="polite">{t.projects.count(list.length)}</span>}
           </div>

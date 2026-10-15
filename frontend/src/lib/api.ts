@@ -5,8 +5,8 @@ export interface Img {
   height: number;
   color: string;
 }
-export type Country = "eg" | "qa";
-export type ProjectType = "residential" | "hospitality" | "retail" | "office";
+export type Country = "eg" | "qa" | "sa";
+export type ProjectType = "residential" | "hospitality" | "retail" | "office" | "industrial" | "healthcare" | "public";
 
 export interface ProjectCard {
   id: number;

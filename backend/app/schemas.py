@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import Image
 
-Country = Literal["eg", "qa"]
-ProjectType = Literal["residential", "hospitality", "retail", "office"]
+Country = Literal["eg", "qa", "sa"]
+ProjectType = Literal["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public"]
 Service = Literal["contracting", "fitout", "supply", "pm", "unsure"]
 ContactMethod = Literal["phone", "whatsapp", "email"]
 EnquiryStatus = Literal["new", "contacted", "closed"]

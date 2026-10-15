@@ -7,6 +7,7 @@ import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
 import { useData, useLang, usePageMeta } from "../lib/context";
+import type { Country } from "../lib/api";
 import { useHeroScale } from "../lib/hooks";
 import { services } from "../i18n";
 
@@ -20,7 +21,7 @@ const SERVICE_HINTS: Record<string, string> = {
 export default function Home() {
   const { t, lp, lang } = useLang();
   const { data, error, reload } = useData();
-  const [country, setCountry] = useState<"all" | "eg" | "qa">("all");
+  const [country, setCountry] = useState<"all" | Country>("all");
   const heroRef = useHeroScale<HTMLDivElement>();
   usePageMeta(t.home.title, t.home.description);
 
@@ -73,9 +74,10 @@ export default function Home() {
               value={country}
               onChange={setCountry}
               options={[
-                { value: "all", label: t.filters.all },
-                { value: "eg", label: t.filters.eg },
-                { value: "qa", label: t.filters.qa },
+                { value: "all" as const, label: t.filters.all },
+                ...(["eg", "qa", "sa"] as Country[])
+                  .filter((c) => (data?.projects ?? []).some((p) => p.country === c))
+                  .map((c) => ({ value: c, label: t.filters[c] })),
               ]}
             />
           </Reveal>

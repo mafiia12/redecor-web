@@ -1,0 +1,580 @@
+[
+  {
+    "slug": "sheraton-cairo-hotel-casino",
+    "title_en": "Sheraton Cairo Hotel & Casino",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      47,
+      49
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "Cairo",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 1
+  },
+  {
+    "slug": "national-bank-of-egypt-ithad-al-shorta",
+    "title_en": "National Bank of Egypt, Ithad Al Shorta",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      17,
+      22
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 2
+  },
+  {
+    "slug": "seven-fortunes-marassi",
+    "title_en": "Seven Fortunes, Marassi",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      23,
+      30
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "Marassi",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 3
+  },
+  {
+    "slug": "redecor-head-office",
+    "title_en": "Redecor Head Office",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      58,
+      62
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "Mohandessin, Giza",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 4
+  },
+  {
+    "slug": "mohandessin-apartment",
+    "title_en": "Mohandessin Apartment",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      63,
+      67
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "Mohandessin, Giza",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 5
+  },
+  {
+    "slug": "kasrawy-group-factory-head-office",
+    "title_en": "Kasrawy Group Factory Head Office",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      8,
+      13
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Renovation",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 6
+  },
+  {
+    "slug": "sokkar-mecca-port-said",
+    "title_en": "Sokkar Mecca, Port Said Branch",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      14,
+      16
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "Port Said",
+    "scope_en": "Renovation",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 7
+  },
+  {
+    "slug": "seven-fortunes-walk-of-cairo",
+    "title_en": "Seven Fortunes, Walk of Cairo",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      31,
+      34
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 8
+  },
+  {
+    "slug": "tanmeyah-imbaba-mazghouna",
+    "title_en": "Tanmeyah, Imbaba & Mazghouna Branch",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      35,
+      38
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 9
+  },
+  {
+    "slug": "zahraa-al-maadi-fifth-square",
+    "title_en": "Zahraa Al Maadi, Fifth Square",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      39,
+      40
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 10
+  },
+  {
+    "slug": "be-babel",
+    "title_en": "Be Babel",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      41,
+      43
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 11
+  },
+  {
+    "slug": "seven-fortunes-north-lane",
+    "title_en": "Seven Fortunes, North Lane",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      44,
+      46
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 12
+  },
+  {
+    "slug": "i-score-hub",
+    "title_en": "i Score Hub",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      50,
+      52
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "Cairo",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 13
+  },
+  {
+    "slug": "chai-jmr-mamsha-ahl-masr",
+    "title_en": "Chai Jmr, Mamsha Ahl Masr",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      53,
+      54
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "Mamsha Ahl Masr",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 14
+  },
+  {
+    "slug": "shorosh",
+    "title_en": "Shorosh",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      55,
+      57
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 15
+  },
+  {
+    "slug": "al-kbous-factory",
+    "title_en": "Al-Kbous Factory",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      69,
+      70
+    ],
+    "country": "eg",
+    "type": "industrial",
+    "city_en": "6th of October City",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 16
+  },
+  {
+    "slug": "october-dry-port",
+    "title_en": "October Dry Port",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      71,
+      76
+    ],
+    "country": "eg",
+    "type": "industrial",
+    "city_en": "6th of October City",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 17
+  },
+  {
+    "slug": "ismailia-stadium",
+    "title_en": "Ismailia Stadium",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      77,
+      78
+    ],
+    "country": "eg",
+    "type": "public",
+    "city_en": "Ismailia",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 18
+  },
+  {
+    "slug": "el-salam-hospital",
+    "title_en": "El Salam Hospital",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      79,
+      80
+    ],
+    "country": "eg",
+    "type": "healthcare",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 19
+  },
+  {
+    "slug": "oceans-breeze",
+    "title_en": "Ocean’s Breeze",
+    "pdf": "OCEANS_BREEZE.pdf",
+    "pages": [
+      1,
+      16
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "Hurghada",
+    "scope_en": "Interior design: plan, 3D visualization, furniture and material boards",
+    "is_render": true,
+    "featured": true,
+    "summary_en": "A coastal dining experience on the Red Sea: white-washed wood accents, vintage maritime decor and large windows with sea views.",
+    "sort_order": 20
+  },
+  {
+    "slug": "villa-mountain-view",
+    "title_en": "Villa, Mountain View",
+    "pdf": "Resedintial__in_egypt_Portfolio.pdf",
+    "pages": [
+      64,
+      76
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 21
+  },
+  {
+    "slug": "villa-new-capital",
+    "title_en": "Villa, New Capital",
+    "pdf": "Resedintial__in_egypt_Portfolio.pdf",
+    "pages": [
+      77,
+      90
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "New Capital",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 22
+  },
+  {
+    "slug": "residential-interiors-egypt",
+    "title_en": "Residential Interiors [name to confirm]",
+    "pdf": "Resedintial__in_egypt_Portfolio.pdf",
+    "pages": [
+      4,
+      63
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 23
+  },
+  {
+    "slug": "fertiglobe-meeting-room",
+    "title_en": "Fertiglobe, Meeting Room",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      4,
+      12
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 24
+  },
+  {
+    "slug": "fertiglobe-technology-room",
+    "title_en": "Fertiglobe, Technology Room",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      62,
+      67
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 25
+  },
+  {
+    "slug": "systel-head-office",
+    "title_en": "Systel Head Office",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      13,
+      16
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 26
+  },
+  {
+    "slug": "zayed-administrative-building",
+    "title_en": "Zayed Administrative Building",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      68,
+      71
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "Sheikh Zayed",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 27
+  },
+  {
+    "slug": "seven-fortunes-palm-hills-design",
+    "title_en": "Seven Fortunes, Palm Hills: Design",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      17,
+      23
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "Palm Hills",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 28
+  },
+  {
+    "slug": "seven-fortunes-marassi-design",
+    "title_en": "Seven Fortunes, Marassi: Design",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      24,
+      32
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "Marassi",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 29
+  },
+  {
+    "slug": "chai-jmr-el-alamein",
+    "title_en": "Chai Jmr, El Alamein",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      33,
+      37
+    ],
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "El Alamein",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 30
+  },
+  {
+    "slug": "chai-jmr-abha",
+    "title_en": "Chai Jmr, Abha",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      38,
+      42
+    ],
+    "country": "sa",
+    "type": "hospitality",
+    "city_en": "Abha",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 31
+  },
+  {
+    "slug": "jumanji-board-games-jeddah",
+    "title_en": "Jumanji Board Games",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      43,
+      56
+    ],
+    "country": "sa",
+    "type": "retail",
+    "city_en": "Jeddah",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 32
+  },
+  {
+    "slug": "andalusia-hospitals-jeddah",
+    "title_en": "Andalusia Hospitals",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      72,
+      74
+    ],
+    "country": "sa",
+    "type": "healthcare",
+    "city_en": "Jeddah",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 33
+  },
+  {
+    "slug": "amanda-hair-salon-doha",
+    "title_en": "Amanda Hair Salon",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      57,
+      61
+    ],
+    "country": "qa",
+    "type": "retail",
+    "city_en": "Doha",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 34
+  }
+]

@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Pull the best image from each PDF page of a project and upload it through the admin API.
+
+Usage (run on the machine that has the PDFs, with the backend running):
+  pip install -r tools/requirements.txt
+  python tools/import_portfolio.py --pdf-dir "D:\\Master Web (Redecor)" --dry-run          # preview only, no upload
+  python tools/import_portfolio.py --pdf-dir "D:\\Master Web (Redecor)" --email you@x.com   # upload (prompts for password)
+Projects are created as HIDDEN unless you pass --publish, so you can review them in /admin first.
+"""
+import argparse
+import getpass
+import hashlib
+import io
+import json
+import os
+import sys
+from pathlib import Path
+
+try:
+    import pymupdf as fitz  # PyMuPDF >= 1.24.3
+except ImportError:  # older releases
+    import fitz
+import requests
+from PIL import Image
+
+MIN_SIDE = 700  # ignore logos / icons smaller than this
+MAX_W = 2400
+
+
+def page_image(doc, page, seen: set[str]) -> Image.Image | None:
+    """Largest embedded picture on the page, else a render of the page itself."""
+    best = None
+    for info in page.get_images(full=True):
+        xref = info[0]
+        try:
+            pix = fitz.Pixmap(doc, xref)
+            if pix.n - pix.alpha > 3:  # CMYK etc.
+                pix = fitz.Pixmap(fitz.csRGB, pix)
+            if min(pix.width, pix.height) < MIN_SIDE:
+                continue
+            area = pix.width * pix.height
+            if not best or area > best[0]:
+                best = (area, pix)
+        except Exception:
+            continue
+    if best:
+        img = Image.open(io.BytesIO(best[1].tobytes("png"))).convert("RGB")
+    else:
+        zoom = 1800 / page.rect.width
+        pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+        img = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB")
+        if img.getextrema() == ((255, 255),) * 3:  # blank page
+            return None
+    digest = hashlib.md5(img.resize((32, 32)).tobytes()).hexdigest()
+    if digest in seen:  # same picture repeated on several pages
+        return None
+    seen.add(digest)
+    if img.width > MAX_W:
+        img = img.resize((MAX_W, round(img.height * MAX_W / img.width)), Image.LANCZOS)
+    return img
+
+
+def jpeg_bytes(img: Image.Image) -> bytes:
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=85, optimize=True)
+    return buf.getvalue()
+
+
+def collect(project: dict, pdf_dir: Path, max_images: int):
+    path = pdf_dir / project["pdf"]
+    if not path.exists():
+        print(f"  ! missing PDF: {path.name}")
+        return []
+    doc = fitz.open(path)
+    first, last = project["pages"]
+    seen: set[str] = set()
+    out = []
+    for n in range(first, min(last, len(doc)) + 1):
+        img = page_image(doc, doc[n - 1], seen)
+        if img:
+            out.append((n, img))
+    if len(out) > max_images:  # keep an even spread through the project
+        step = len(out) / max_images
+        out = [out[int(i * step)] for i in range(max_images)]
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--pdf-dir", required=True)
+    ap.add_argument("--manifest", default=str(Path(__file__).with_name("portfolio_manifest.json")))
+    ap.add_argument("--api", default="http://localhost:8000")
+    ap.add_argument("--email")
+    ap.add_argument("--password", default=os.getenv("ADMIN_PASSWORD"))
+    ap.add_argument("--only", help="comma-separated slugs")
+    ap.add_argument("--max-images", type=int, default=16)
+    ap.add_argument("--publish", action="store_true", help="make projects visible (default: hidden)")
+    ap.add_argument("--replace-demo", action="store_true", help="delete the [placeholder] demo projects first")
+    ap.add_argument("--dry-run", action="store_true", help="save previews to ./portfolio_preview, upload nothing")
+    a = ap.parse_args()
+
+    projects = json.load(open(a.manifest, encoding="utf-8"))
+    if a.only:
+        wanted = set(a.only.split(","))
+        projects = [p for p in projects if p["slug"] in wanted]
+    pdf_dir = Path(a.pdf_dir)
+
+    s = requests.Session()
+    existing: dict[str, int] = {}
+    if not a.dry_run:
+        if not a.email:
+            sys.exit("--email is required (admin account)")
+        pw = a.password or getpass.getpass("Admin password: ")
+        r = s.post(f"{a.api}/api/admin/login", json={"email": a.email, "password": pw})
+        if r.status_code != 200:
+            sys.exit(f"Login failed: {r.text}")
+        s.headers["Authorization"] = f"Bearer {r.json()['token']}"
+        existing = {p["slug"]: p["id"] for p in s.get(f"{a.api}/api/admin/projects").json()}
+        if a.replace_demo:
+            for p in s.get(f"{a.api}/api/admin/projects").json():
+                if p["title_en"].startswith("["):
+                    s.delete(f"{a.api}/api/admin/projects/{p['id']}")
+            for c in s.get(f"{a.api}/api/admin/clients").json():
+                if c["name"].startswith("["):
+                    s.delete(f"{a.api}/api/admin/clients/{c['id']}")
+
+    for p in projects:
+        print(f"\n{p['title_en']}  ({p['pdf']} p.{p['pages'][0]}-{p['pages'][1]})")
+        if p["slug"] in existing:
+            print("  = already exists, skipped")
+            continue
+        imgs = collect(p, pdf_dir, a.max_images)
+        print(f"  {len(imgs)} images")
+        if not imgs:
+            continue
+        if a.dry_run:
+            d = Path("portfolio_preview") / p["slug"]
+            d.mkdir(parents=True, exist_ok=True)
+            for n, img in imgs:
+                img.thumbnail((900, 900))
+                img.save(d / f"p{n:03d}.jpg", quality=80)
+            continue
+        body = {k: p[k] for k in ("slug", "title_en", "country", "type", "city_en", "scope_en", "summary_en", "is_render", "featured", "sort_order")}
+        body["published"] = a.publish
+        r = s.post(f"{a.api}/api/admin/projects", json=body)
+        if r.status_code != 201:
+            print("  ! create failed:", r.text)
+            continue
+        pid = r.json()["id"]
+        for i in range(0, len(imgs), 8):  # small batches keep requests light
+            files = [("files", (f"p{n:03d}.jpg", jpeg_bytes(img), "image/jpeg")) for n, img in imgs[i : i + 8]]
+            r = s.post(f"{a.api}/api/admin/projects/{pid}/images", files=files)
+            if r.status_code != 201:
+                print("  ! upload failed:", r.text)
+                break
+        print("  ✓ uploaded", "(published)" if a.publish else "(hidden: review in /admin)")
+
+
+if __name__ == "__main__":
+    main()
