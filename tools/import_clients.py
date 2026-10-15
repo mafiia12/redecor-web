@@ -4,6 +4,9 @@
   python tools/import_clients.py --pdf-dir "D:\\Master Web (Redecor)" --dry-run     # preview in ./clients_preview
   python tools/import_clients.py --pdf-dir "D:\\Master Web (Redecor)" --email ADMIN --replace-demo
 
+Sources, in order of preference: the "OUR CLIENTS" slide of a PowerPoint file in --pdf-dir (original logo pictures, best
+quality), then the "Our Clients" pages of the PDFs. White circle badges are removed so only the logo remains.
+
 Logos come out as transparent PNGs. White/grey logos taken from a dark page are recoloured dark so they read on the
 light client wall (the site shows them in grayscale anyway). To name them, put one client name per line in a text file
 in the same order as the preview sheet and pass --names names.txt; otherwise they are called "Client 01", "Client 02"...
@@ -69,7 +72,7 @@ def segment_logos(page):
     mask = dist > 40
     grown = ndimage.binary_dilation(mask, iterations=max(6, w // 150))  # merge icon + wordmark
     labels, n = ndimage.label(grown)
-    out = []
+    boxes = []
     for sl in ndimage.find_objects(labels):
         y0, y1, x0, x1 = sl[0].start, sl[0].stop, sl[1].start, sl[1].stop
         bw, bh = x1 - x0, y1 - y0
@@ -77,15 +80,31 @@ def segment_logos(page):
             continue
         if y1 < h * 0.18:  # the "OUR CLIENTS" heading
             continue
-        sub_d = dist[y0:y1, x0:x1]
-        alpha = np.clip(sub_d * 3, 0, 255).astype(np.uint8)
+        boxes.append((x0, y0, x1, y1))
+    # reading order: group blobs into rows by their centre, then left to right
+    boxes.sort(key=lambda b: (b[1] + b[3]) / 2)
+    band = (np.median([b[3] - b[1] for b in boxes]) * 0.5) if boxes else 0
+    rows, cur = [], []
+    for b in boxes:
+        if cur and (b[1] + b[3]) / 2 - (cur[-1][1] + cur[-1][3]) / 2 > band:
+            rows.append(cur)
+            cur = []
+        cur.append(b)
+    if cur:
+        rows.append(cur)
+    out = []
+    for b in [b for r in rows for b in sorted(r, key=lambda q: q[0] + q[2])]:
+        x0, y0, x1, y1 = b
         crop = rgb[y0:y1, x0:x1].astype(np.uint8)
-        im = Image.fromarray(np.dstack([crop, alpha]), "RGBA")
+        light = np.median(crop.reshape(-1, 3), axis=0).mean() > 200
+        alpha = np.clip(dist[y0:y1, x0:x1] * 3, 0, 255).astype(np.uint8)
+        im = Image.fromarray(np.dstack([crop, np.full_like(alpha, 255) if light else alpha]), "RGBA")
         out.append((im, bg))
-    return out  # find_objects yields blobs in scan order (top to bottom, then left to right)
+    return out
 
 
 def normalise(im: Image.Image, bg=None) -> Image.Image:
+    im = knock_out_white(im)
     bbox = im.getchannel("A").point(lambda a: 255 if a > 20 else 0).getbbox()
     if bbox:
         im = im.crop(bbox)
@@ -96,7 +115,7 @@ def normalise(im: Image.Image, bg=None) -> Image.Image:
         sat = (mean.max() - mean.min()) / (mean.max() + 1e-6)
         lum = mean.mean()
         # pale, colourless logo (from a dark page): recolour so it shows on a light background
-        if sat < 0.2 and lum > 140:
+        if sat < 0.2 and lum > 190:
             a[..., 0], a[..., 1], a[..., 2] = INK
     im = Image.fromarray(a.astype(np.uint8), "RGBA")
     pad = max(4, im.width // 40)
@@ -108,8 +127,80 @@ def normalise(im: Image.Image, bg=None) -> Image.Image:
 
 
 def fingerprint(im: Image.Image) -> np.ndarray:
-    g = im.convert("RGBA").resize((16, 16), Image.BILINEAR).getchannel("A")
+    white = Image.new("RGBA", im.size, (255, 255, 255, 255))
+    g = Image.alpha_composite(white, im.convert("RGBA")).convert("L").resize((24, 24), Image.BILINEAR)
     return np.array(g, dtype=np.float32).ravel() / 255.0
+
+
+
+def pptx_logos(pdf_dir: Path):
+    """Picture shapes on the slide titled "OUR CLIENTS", in reading order (rows top to bottom, then left to right)."""
+    try:
+        from pptx import Presentation
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+    except ImportError:
+        print("(python-pptx not installed: skipping PowerPoint files)")
+        return []
+
+    def walk(shapes):
+        for sh in shapes:
+            if sh.shape_type == MSO_SHAPE_TYPE.GROUP:
+                yield from walk(sh.shapes)
+            else:
+                yield sh
+
+    for f in sorted(pdf_dir.rglob("*.pptx")):
+        if f.name.startswith("~$"):
+            continue
+        try:
+            prs = Presentation(f)
+        except Exception:
+            continue
+        for slide in prs.slides:
+            shapes = list(walk(slide.shapes))
+            text = " ".join(sh.text_frame.text for sh in shapes if sh.has_text_frame).upper()
+            if "OUR CLIENTS" not in text:
+                continue
+            pics = [sh for sh in shapes if sh.shape_type == MSO_SHAPE_TYPE.PICTURE and min(sh.width, sh.height) > 300000]
+            if len(pics) < 6:
+                continue
+            band = sorted(p.height for p in pics)[len(pics) // 2] * 0.5
+            pics.sort(key=lambda p: p.top + p.height / 2)
+            rows, cur = [], [pics[0]]
+            for p in pics[1:]:
+                if (p.top + p.height / 2) - (cur[-1].top + cur[-1].height / 2) > band:
+                    rows.append(cur)
+                    cur = []
+                cur.append(p)
+            rows.append(cur)
+            ordered = [p for r in rows for p in sorted(r, key=lambda q: q.left + q.width / 2)]
+            print(f"{f.name}: slide with {len(ordered)} client pictures")
+            out = []
+            for p in ordered:
+                try:
+                    out.append(Image.open(io.BytesIO(p.image.blob)).convert("RGBA"))
+                except Exception:
+                    pass
+            return out
+    return []
+
+
+def knock_out_white(im: Image.Image) -> Image.Image:
+    """Logos placed on white (or white circle badges): make the white transparent and keep the logo colours."""
+    a = np.array(im).astype(np.int16)
+    border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
+    opaque = border[:, 3] > 200
+    if opaque.sum() < len(border) * 0.5:
+        return im  # already has a transparent background
+    if (border[opaque][:, :3].min(axis=1) > 225).mean() < 0.85:
+        return im  # not a white background
+    dist = np.clip((255 - a[..., :3]).max(axis=2) * 3, 0, 255)
+    alpha = np.minimum(dist, a[..., 3]).astype(np.uint8)
+    h, w = alpha.shape
+    yy, xx = np.ogrid[:h, :w]
+    if 0.85 < w / h < 1.18:  # round badge: ignore anything outside the circle
+        alpha[(xx - w / 2) ** 2 + (yy - h / 2) ** 2 > (min(w, h) / 2 * 0.96) ** 2] = 0
+    return Image.fromarray(np.dstack([a[..., :3].astype(np.uint8), alpha]), "RGBA")
 
 
 def png_bytes(im):
@@ -133,7 +224,13 @@ def main():
     pdf_dir = Path(a.pdf_dir)
     logos: list[Image.Image] = []
     seen: list[np.ndarray] = []
-    for key, pages in SOURCES:
+    for im in pptx_logos(pdf_dir):
+        im = normalise(im)
+        fp = fingerprint(im)
+        if not any(np.abs(fp - s).mean() < 0.015 for s in seen):
+            seen.append(fp)
+            logos.append(im)
+    for key, pages in ([] if logos else SOURCES):
         path = find_pdf(pdf_dir, key)
         if not path:
             continue
@@ -151,7 +248,7 @@ def main():
             for im, bg in items:
                 im = normalise(im, bg)
                 fp = fingerprint(im)
-                if any(np.abs(fp - s).mean() < 0.04 for s in seen):  # same logo already collected
+                if any(np.abs(fp - s).mean() < 0.015 for s in seen):  # same logo already collected
                     continue
                 seen.append(fp)
                 logos.append(im)
@@ -161,8 +258,11 @@ def main():
         sys.exit("No logos found. Check --pdf-dir and the page numbers in SOURCES.")
 
     names = []
-    if a.names:
-        names = [l.strip() for l in Path(a.names).read_text(encoding="utf-8").splitlines() if l.strip()]
+    names_file = Path(a.names) if a.names else Path(__file__).with_name("client_names.txt")
+    if names_file.exists():
+        names = [l.strip() for l in names_file.read_text(encoding="utf-8").splitlines() if l.strip()]
+        if not a.names and len(names) != len(logos):  # bundled names only fit the PowerPoint slide (16 logos)
+            names = []
     label = lambda i: names[i] if i < len(names) else f"Client {i + 1:02d}"
 
     if a.dry_run:
