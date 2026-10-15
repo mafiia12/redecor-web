@@ -153,10 +153,18 @@ def main():
 
     sheet: list[str] = []
     for p in projects:
-        src_label = "; ".join(f"{x['pdf']} p.{x['pages'][0]}-{x['pages'][1]}" for x in (p.get("sources") or [p]))
+        src_label = "; ".join(f"{x['pdf']} p.{x['pages'][0]}-{x['pages'][1]}" for x in (p.get("sources") or [p])) if not p.get("draft") else "no files"
         print(f"\n{p['title_en']}  ({src_label})")
         if p["slug"] in existing:
             print("  = already exists, skipped")
+            continue
+        if p.get("draft"):  # listed by the owner but no material yet: create a hidden placeholder to fill in /admin
+            print("  draft (no photos yet)" + (f"   ? confirm: {p['confirm']}" if p.get("confirm") else ""))
+            if not a.dry_run:
+                body = {k: p.get(k, "") for k in ("slug", "title_en", "country", "type", "city_en", "scope_en", "summary_en", "is_render", "featured", "sort_order")}
+                body["published"] = False
+                r = s.post(f"{a.api}/api/admin/projects", json=body)
+                print("  ✓ draft created (hidden)" if r.status_code == 201 else f"  ! create failed: {r.text}")
             continue
         imgs = collect(p, pdf_dir, a.max_images)
         print(f"  {len(imgs)} images" + (f"   ? confirm: {p['confirm']}" if p.get("confirm") else ""))

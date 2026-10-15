@@ -1,37 +1,38 @@
 [
   {
-    "slug": "sheraton-cairo-hotel-casino",
-    "title_en": "Sheraton Cairo Hotel & Casino",
-    "pdf": "Redecor_Fit-out_projects.pdf",
+    "slug": "oceans-breeze",
+    "title_en": "Ocean’s Breeze",
+    "pdf": "OCEANS_BREEZE.pdf",
     "pages": [
-      47,
-      49
+      1,
+      16
     ],
     "country": "eg",
     "type": "hospitality",
-    "city_en": "Cairo",
-    "scope_en": "Fit-out",
-    "is_render": false,
+    "city_en": "Hurghada",
+    "scope_en": "Interior design: plan, 3D visualization, furniture and material boards",
+    "is_render": true,
     "featured": true,
-    "summary_en": "",
+    "summary_en": "A coastal dining experience on the Red Sea: white-washed wood accents, vintage maritime decor and large windows with sea views.",
     "sort_order": 1
   },
   {
-    "slug": "national-bank-of-egypt-ithad-al-shorta",
-    "title_en": "National Bank of Egypt, Ithad Al Shorta",
+    "slug": "zahraa-al-maadi-fifth-square",
+    "title_en": "Zahraa Al Maadi, Fifth Square",
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
-      17,
-      22
+      39,
+      40
     ],
     "country": "eg",
-    "type": "office",
+    "type": "landscape",
     "city_en": "",
-    "scope_en": "Fit-out",
+    "scope_en": "Landscape fit-out",
     "is_render": false,
     "featured": true,
     "summary_en": "",
-    "sort_order": 2
+    "sort_order": 2,
+    "scope": "Landscape"
   },
   {
     "slug": "seven-fortunes-marassi",
@@ -51,16 +52,16 @@
     "sort_order": 3
   },
   {
-    "slug": "redecor-head-office",
-    "title_en": "Redecor Head Office",
+    "slug": "seven-fortunes-walk-of-cairo",
+    "title_en": "Seven Fortunes, Walk of Cairo",
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
-      58,
-      62
+      31,
+      34
     ],
     "country": "eg",
-    "type": "office",
-    "city_en": "Mohandessin, Giza",
+    "type": "hospitality",
+    "city_en": "",
     "scope_en": "Design & execution",
     "is_render": false,
     "featured": true,
@@ -68,37 +69,36 @@
     "sort_order": 4
   },
   {
-    "slug": "mohandessin-apartment",
-    "title_en": "Mohandessin Apartment",
+    "slug": "seven-fortunes-north-lane",
+    "title_en": "Seven Fortunes, North Lane",
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
-      63,
-      66
+      44,
+      46
     ],
     "country": "eg",
-    "type": "residential",
-    "city_en": "Mohandessin, Giza",
-    "scope_en": "Fit-out",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "Design & execution",
     "is_render": false,
     "featured": true,
     "summary_en": "",
     "sort_order": 5
   },
   {
-    "slug": "neo-classic-apartment",
-    "title_en": "Neo Classic Apartment",
+    "slug": "national-bank-of-egypt-ithad-al-shorta",
+    "title_en": "National Bank of Egypt, Ithad Al Shorta",
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
-      67,
-      67
+      17,
+      22
     ],
-    "all_images": true,
     "country": "eg",
-    "type": "residential",
+    "type": "office",
     "city_en": "",
     "scope_en": "Fit-out",
     "is_render": false,
-    "featured": false,
+    "featured": true,
     "summary_en": "",
     "sort_order": 6
   },
@@ -115,9 +115,26 @@
     "city_en": "",
     "scope_en": "Renovation",
     "is_render": false,
-    "featured": false,
+    "featured": true,
     "summary_en": "",
     "sort_order": 7
+  },
+  {
+    "slug": "i-score-hub",
+    "title_en": "i Score Hub",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      50,
+      52
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "Cairo",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 8
   },
   {
     "slug": "sokkar-mecca",
@@ -127,7 +144,7 @@
     "city_en": "",
     "scope_en": "Head office façade design and Port Said branch renovation",
     "is_render": false,
-    "featured": false,
+    "featured": true,
     "summary_en": "",
     "sources": [
       {
@@ -146,24 +163,110 @@
         "render": true
       }
     ],
-    "sort_order": 8
+    "sort_order": 9
   },
   {
-    "slug": "seven-fortunes-walk-of-cairo",
-    "title_en": "Seven Fortunes, Walk of Cairo",
+    "slug": "systel-head-office",
+    "title_en": "Systel Head Office",
+    "pdf": "Retail_Commerical_Portfolio.pdf",
+    "pages": [
+      13,
+      16
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "",
+    "scope_en": "Interior design",
+    "is_render": true,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 10
+  },
+  {
+    "slug": "shorosh",
+    "title_en": "Shorosh",
     "pdf": "Redecor_Fit-out_projects.pdf",
     "pages": [
-      31,
-      34
+      55,
+      57
+    ],
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": true,
+    "summary_en": "",
+    "sort_order": 11
+  },
+  {
+    "slug": "sheraton-cairo-hotel-casino",
+    "title_en": "Sheraton Cairo Hotel & Casino",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      47,
+      49
     ],
     "country": "eg",
     "type": "hospitality",
-    "city_en": "",
+    "city_en": "Cairo",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 12
+  },
+  {
+    "slug": "redecor-head-office",
+    "title_en": "Redecor Head Office",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      58,
+      62
+    ],
+    "country": "eg",
+    "type": "office",
+    "city_en": "Mohandessin, Giza",
     "scope_en": "Design & execution",
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 9
+    "sort_order": 13
+  },
+  {
+    "slug": "mohandessin-apartment",
+    "title_en": "Mohandessin Apartment",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      63,
+      66
+    ],
+    "country": "eg",
+    "type": "residential",
+    "city_en": "Mohandessin, Giza",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 14
+  },
+  {
+    "slug": "neo-classic-apartment",
+    "title_en": "Neo Classic Apartment",
+    "pdf": "Redecor_Fit-out_projects.pdf",
+    "pages": [
+      67,
+      67
+    ],
+    "all_images": true,
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "Fit-out",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "sort_order": 15
   },
   {
     "slug": "tanmeyah-imbaba-mazghouna",
@@ -180,25 +283,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 10
-  },
-  {
-    "slug": "zahraa-al-maadi-fifth-square",
-    "title_en": "Zahraa Al Maadi, Fifth Square",
-    "pdf": "Redecor_Fit-out_projects.pdf",
-    "pages": [
-      39,
-      40
-    ],
-    "country": "eg",
-    "type": "landscape",
-    "city_en": "",
-    "scope_en": "Landscape fit-out",
-    "is_render": false,
-    "featured": false,
-    "summary_en": "",
-    "sort_order": 11,
-    "scope": "Landscape"
+    "sort_order": 16
   },
   {
     "slug": "be-babel",
@@ -215,41 +300,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 12
-  },
-  {
-    "slug": "seven-fortunes-north-lane",
-    "title_en": "Seven Fortunes, North Lane",
-    "pdf": "Redecor_Fit-out_projects.pdf",
-    "pages": [
-      44,
-      46
-    ],
-    "country": "eg",
-    "type": "hospitality",
-    "city_en": "",
-    "scope_en": "Design & execution",
-    "is_render": false,
-    "featured": false,
-    "summary_en": "",
-    "sort_order": 13
-  },
-  {
-    "slug": "i-score-hub",
-    "title_en": "i Score Hub",
-    "pdf": "Redecor_Fit-out_projects.pdf",
-    "pages": [
-      50,
-      52
-    ],
-    "country": "eg",
-    "type": "office",
-    "city_en": "Cairo",
-    "scope_en": "Fit-out",
-    "is_render": false,
-    "featured": false,
-    "summary_en": "",
-    "sort_order": 14
+    "sort_order": 17
   },
   {
     "slug": "chai-jmr-mamsha-ahl-masr",
@@ -266,24 +317,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 15
-  },
-  {
-    "slug": "shorosh",
-    "title_en": "Shorosh",
-    "pdf": "Redecor_Fit-out_projects.pdf",
-    "pages": [
-      55,
-      57
-    ],
-    "country": "eg",
-    "type": "retail",
-    "city_en": "",
-    "scope_en": "Fit-out",
-    "is_render": false,
-    "featured": false,
-    "summary_en": "",
-    "sort_order": 16
+    "sort_order": 18
   },
   {
     "slug": "al-kbous-factory",
@@ -300,7 +334,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 17
+    "sort_order": 19
   },
   {
     "slug": "october-dry-port",
@@ -317,7 +351,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 18
+    "sort_order": 20
   },
   {
     "slug": "metropolitan-school",
@@ -334,7 +368,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 19
+    "sort_order": 21
   },
   {
     "slug": "vapsera",
@@ -351,7 +385,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 20
+    "sort_order": 22
   },
   {
     "slug": "ismailia-stadium",
@@ -368,7 +402,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 21
+    "sort_order": 23
   },
   {
     "slug": "el-salam-hospital",
@@ -385,24 +419,7 @@
     "is_render": false,
     "featured": false,
     "summary_en": "",
-    "sort_order": 22
-  },
-  {
-    "slug": "oceans-breeze",
-    "title_en": "Ocean’s Breeze",
-    "pdf": "OCEANS_BREEZE.pdf",
-    "pages": [
-      1,
-      16
-    ],
-    "country": "eg",
-    "type": "hospitality",
-    "city_en": "Hurghada",
-    "scope_en": "Interior design: plan, 3D visualization, furniture and material boards",
-    "is_render": true,
-    "featured": true,
-    "summary_en": "A coastal dining experience on the Red Sea: white-washed wood accents, vintage maritime decor and large windows with sea views.",
-    "sort_order": 23
+    "sort_order": 24
   },
   {
     "slug": "villa-mountain-view",
@@ -417,9 +434,9 @@
     "city_en": "",
     "scope_en": "Interior design",
     "is_render": true,
-    "featured": true,
+    "featured": false,
     "summary_en": "",
-    "sort_order": 24
+    "sort_order": 25
   },
   {
     "slug": "villa-new-capital",
@@ -436,7 +453,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 25
+    "sort_order": 26
   },
   {
     "slug": "residential-interiors-egypt",
@@ -453,7 +470,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 26
+    "sort_order": 27
   },
   {
     "slug": "residential-apartments-qatar",
@@ -470,7 +487,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 27
+    "sort_order": 28
   },
   {
     "slug": "fertiglobe-meeting-room",
@@ -487,7 +504,7 @@
     "is_render": true,
     "featured": false,
     "summary_en": "",
-    "sort_order": 28
+    "sort_order": 29
   },
   {
     "slug": "fertiglobe-technology-room",
@@ -496,23 +513,6 @@
     "pages": [
       62,
       67
-    ],
-    "country": "eg",
-    "type": "office",
-    "city_en": "",
-    "scope_en": "Interior design",
-    "is_render": true,
-    "featured": false,
-    "summary_en": "",
-    "sort_order": 29
-  },
-  {
-    "slug": "systel-head-office",
-    "title_en": "Systel Head Office",
-    "pdf": "Retail_Commerical_Portfolio.pdf",
-    "pages": [
-      13,
-      16
     ],
     "country": "eg",
     "type": "office",
@@ -898,5 +898,103 @@
     "featured": false,
     "summary_en": "",
     "sort_order": 52
+  },
+  {
+    "slug": "dunk",
+    "title_en": "Dunk",
+    "draft": true,
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "On the owner's priority list (marked ready) but no pages identified yet: which file/pages? Is it an F&B branch?",
+    "sort_order": 53
+  },
+  {
+    "slug": "park-street-mall",
+    "title_en": "Park Street Mall (clothing shop)",
+    "draft": true,
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Owner's list: a clothing shop in Park St Mall. Is this the same as 'Be Babel, Park St.'? Be Babel is currently typed hospitality/F&B.",
+    "sort_order": 54
+  },
+  {
+    "slug": "downtown-hotel",
+    "title_en": "Downtown Hotel",
+    "draft": true,
+    "country": "eg",
+    "type": "hospitality",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Owner's note has '?!!': confirm the exact name, and whether it is Sheraton Cairo or a different project.",
+    "sort_order": 55
+  },
+  {
+    "slug": "zayed-mall",
+    "title_en": "Zayed Mall",
+    "draft": true,
+    "country": "eg",
+    "type": "retail",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Owner's list: is this the same as 'Zayed Administrative Building' (office design) or a separate mall project?",
+    "sort_order": 56
+  },
+  {
+    "slug": "badya-palm-hills",
+    "title_en": "Badya Palm Hills",
+    "draft": true,
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Residential, no presentation yet.",
+    "sort_order": 57
+  },
+  {
+    "slug": "ali-house",
+    "title_en": "Ali House",
+    "draft": true,
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Residential (the owner's own house), no presentation yet. Confirm the public name.",
+    "sort_order": 58
+  },
+  {
+    "slug": "bet-el-watan",
+    "title_en": "Bet El Watan",
+    "draft": true,
+    "country": "eg",
+    "type": "residential",
+    "city_en": "",
+    "scope_en": "",
+    "is_render": false,
+    "featured": false,
+    "summary_en": "",
+    "confirm": "Residential, no presentation yet.",
+    "sort_order": 59
   }
 ]
