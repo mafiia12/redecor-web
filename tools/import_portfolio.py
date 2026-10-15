@@ -105,11 +105,48 @@ def collect(project: dict, pdf_dir: Path, max_images: int):
         first, last = src["pages"]
         for n in range(first, min(last, len(doc)) + 1):
             for k, img in enumerate(page_images(doc, doc[n - 1], seen, project.get("all_images", False))):
-                out.append((f"{n}{'abcdefgh'[k] if k else ''}", img, bool(src.get("render"))))
+                out.append((f"{n}{'abcdefgh'[k] if k else ''}", img, bool(src.get("render")), ""))
     if len(out) > max_images:  # keep an even spread through the project
         step = len(out) / max_images
         out = [out[int(i * step)] for i in range(max_images)]
     return out
+
+
+def load_folder(folder: Path, max_images: int):
+    """Images from a folder (e.g. best renders pulled from the company server). Optional images.json:
+    {"01.jpg": {"is_render": true, "role": "cover"|"gallery", "caption_en": "..."}}"""
+    import json as _json
+
+    meta = {}
+    mf = folder / "images.json"
+    if mf.exists():
+        try:
+            raw = _json.loads(mf.read_text(encoding="utf-8"))
+            meta = {m["file"]: m for m in raw} if isinstance(raw, list) else raw
+        except Exception as e:
+            print(f"  ! could not read {mf.name}: {e}")
+    files = sorted(f for f in folder.iterdir() if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"))
+    files.sort(key=lambda f: 0 if meta.get(f.name, {}).get("role") == "cover" else 1)
+    out = []
+    for f in files:
+        try:
+            im = Image.open(f)
+            if im.mode in ("RGBA", "LA", "P"):
+                im = im.convert("RGBA")
+                bg = Image.new("RGB", im.size, (255, 255, 255))
+                bg.paste(im, mask=im.getchannel("A"))
+                im = bg
+            im = im.convert("RGB")
+        except Exception as e:
+            print(f"  ! skipped {f.name}: {e}")
+            continue
+        if min(im.size) < MIN_SIDE:
+            print(f"  ! skipped {f.name}: too small ({im.width}x{im.height})")
+            continue
+        if im.width > MAX_W:
+            im = im.resize((MAX_W, round(im.height * MAX_W / im.width)), Image.LANCZOS)
+        out.append((f.stem, im, bool(meta.get(f.name, {}).get("is_render", False)), meta.get(f.name, {}).get("caption_en", "")))
+    return out[:max_images]
 
 
 def main():
@@ -121,6 +158,7 @@ def main():
     ap.add_argument("--password", default=os.getenv("ADMIN_PASSWORD"))
     ap.add_argument("--only", help="comma-separated slugs")
     ap.add_argument("--max-images", type=int, default=16)
+    ap.add_argument("--images-dir", help="folder with one sub-folder per project slug (e.g. portfolio_export/images); used instead of the PDFs when present")
     ap.add_argument("--publish", action="store_true", help="make projects visible (default: hidden)")
     ap.add_argument("--replace-demo", action="store_true", help="delete the [placeholder] demo projects first")
     ap.add_argument("--dry-run", action="store_true", help="save previews to ./portfolio_preview, upload nothing")
@@ -153,12 +191,14 @@ def main():
 
     sheet: list[str] = []
     for p in projects:
-        src_label = "; ".join(f"{x['pdf']} p.{x['pages'][0]}-{x['pages'][1]}" for x in (p.get("sources") or [p])) if not p.get("draft") else "no files"
+        src_label = "no files" if p.get("draft") or not (p.get("sources") or p.get("pdf")) else "; ".join(f"{x['pdf']} p.{x['pages'][0]}-{x['pages'][1]}" for x in (p.get("sources") or [p]))
         print(f"\n{p['title_en']}  ({src_label})")
         if p["slug"] in existing:
             print("  = already exists, skipped")
             continue
-        if p.get("draft"):  # listed by the owner but no material yet: create a hidden placeholder to fill in /admin
+        folder = Path(a.images_dir) / p["slug"] if a.images_dir else None
+        from_folder = bool(folder and folder.is_dir() and any(folder.iterdir()))
+        if p.get("draft") and not from_folder:  # listed by the owner but no material yet: create a hidden placeholder to fill in /admin
             print("  draft (no photos yet)" + (f"   ? confirm: {p['confirm']}" if p.get("confirm") else ""))
             if not a.dry_run:
                 body = {k: p.get(k, "") for k in ("slug", "title_en", "country", "type", "city_en", "scope_en", "summary_en", "is_render", "featured", "sort_order")}
@@ -166,7 +206,9 @@ def main():
                 r = s.post(f"{a.api}/api/admin/projects", json=body)
                 print("  ✓ draft created (hidden)" if r.status_code == 201 else f"  ! create failed: {r.text}")
             continue
-        imgs = collect(p, pdf_dir, a.max_images)
+        imgs = load_folder(folder, a.max_images) if from_folder else collect(p, pdf_dir, a.max_images)
+        if from_folder:
+            src_label = f"folder {folder}"
         print(f"  {len(imgs)} images" + (f"   ? confirm: {p['confirm']}" if p.get("confirm") else ""))
         if not imgs:
             continue
@@ -174,7 +216,7 @@ def main():
             d = Path("portfolio_preview") / p["slug"]
             d.mkdir(parents=True, exist_ok=True)
             cells = []
-            for i, (n, img, _) in enumerate(imgs):
+            for i, (n, img, _, _c) in enumerate(imgs):
                 img.thumbnail((900, 900))
                 img.save(d / f"{i:03d}.jpg", quality=80)
                 cells.append(f'<figure><img src="{p["slug"]}/{i:03d}.jpg" loading="lazy"><figcaption>page {n}</figcaption></figure>')
@@ -192,14 +234,19 @@ def main():
         pid = r.json()["id"]
         for i in range(0, len(imgs), 8):  # small batches keep requests light
             batch = imgs[i : i + 8]
-            files = [("files", (f"{n}.jpg", jpeg_bytes(img), "image/jpeg")) for n, img, _ in batch]
+            files = [("files", (f"{n}.jpg", jpeg_bytes(img), "image/jpeg")) for n, img, _, _c in batch]
             r = s.post(f"{a.api}/api/admin/projects/{pid}/images", files=files)
             if r.status_code != 201:
                 print("  ! upload failed:", r.text)
                 break
-            for rec, (_, _, is_render) in zip(r.json(), batch):  # flag renders inside mixed projects
-                if is_render:
-                    s.patch(f"{a.api}/api/admin/project-images/{rec['id']}", json={"is_render": True})
+            for rec, (_, _, is_render, caption) in zip(r.json(), batch):  # per-image flags
+                patch = {}
+                if is_render and not p["is_render"]:
+                    patch["is_render"] = True
+                if caption:
+                    patch["caption_en"] = caption
+                if patch:
+                    s.patch(f"{a.api}/api/admin/project-images/{rec['id']}", json=patch)
         print("  ✓ uploaded", "(published)" if a.publish else "(hidden: review in /admin)")
 
     if a.dry_run and sheet:
