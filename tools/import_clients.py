@@ -127,14 +127,16 @@ def normalise(im: Image.Image, bg=None) -> Image.Image:
 
 
 def fingerprint(im: Image.Image) -> np.ndarray:
+    """Shape and colour signature (so two logos with the same silhouette but different colours stay separate)."""
     white = Image.new("RGBA", im.size, (255, 255, 255, 255))
-    g = Image.alpha_composite(white, im.convert("RGBA")).convert("L").resize((24, 24), Image.BILINEAR)
+    g = Image.alpha_composite(white, im.convert("RGBA")).convert("RGB").resize((16, 16), Image.BILINEAR)
     return np.array(g, dtype=np.float32).ravel() / 255.0
 
 
 
 def pptx_logos(pdf_dir: Path):
-    """Picture shapes on the slide titled "OUR CLIENTS", in reading order (rows top to bottom, then left to right)."""
+    """Pictures on the slide titled "OUR CLIENTS", in reading order (rows top to bottom, then left to right).
+    Handles plain pictures and shapes filled with a picture (round badges)."""
     try:
         from pptx import Presentation
         from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -154,34 +156,44 @@ def pptx_logos(pdf_dir: Path):
             continue
         try:
             prs = Presentation(f)
-        except Exception:
+        except Exception as e:
+            print(f"(could not open {f.name}: {e})")
             continue
         for slide in prs.slides:
             shapes = list(walk(slide.shapes))
             text = " ".join(sh.text_frame.text for sh in shapes if sh.has_text_frame).upper()
             if "OUR CLIENTS" not in text:
                 continue
-            pics = [sh for sh in shapes if sh.shape_type == MSO_SHAPE_TYPE.PICTURE and min(sh.width, sh.height) > 300000]
-            if len(pics) < 6:
+            cands = []
+            for sh in shapes:
+                rids = sh._element.xpath(".//a:blip/@r:embed")
+                if rids and min(sh.width, sh.height) > 300000 and sh.width < prs.slide_width * 0.4:
+                    cands.append((sh, rids[0]))
+            print(f"{f.name}: slide 'OUR CLIENTS' has {len(cands)} picture shapes")
+            if len(cands) < 6:
                 continue
-            band = sorted(p.height for p in pics)[len(pics) // 2] * 0.5
-            pics.sort(key=lambda p: p.top + p.height / 2)
-            rows, cur = [], [pics[0]]
-            for p in pics[1:]:
-                if (p.top + p.height / 2) - (cur[-1].top + cur[-1].height / 2) > band:
+            # keep the logo badges: similar size and roughly square (drops the Redecor logo / decorations)
+            med_w = sorted(c[0].width for c in cands)[len(cands) // 2]
+            cands = [c for c in cands if 0.7 < c[0].width / med_w < 1.4 and 0.75 < c[0].width / c[0].height < 1.33]
+            band = med_w * 0.5
+            cands.sort(key=lambda c: c[0].top + c[0].height / 2)
+            rows, cur = [], [cands[0]]
+            for c in cands[1:]:
+                if (c[0].top + c[0].height / 2) - (cur[-1][0].top + cur[-1][0].height / 2) > band:
                     rows.append(cur)
                     cur = []
-                cur.append(p)
+                cur.append(c)
             rows.append(cur)
-            ordered = [p for r in rows for p in sorted(r, key=lambda q: q.left + q.width / 2)]
-            print(f"{f.name}: slide with {len(ordered)} client pictures")
+            ordered = [c for r in rows for c in sorted(r, key=lambda q: q[0].left + q[0].width / 2)]
+            print(f"  using {len(ordered)} logos in {len(rows)} rows")
             out = []
-            for p in ordered:
+            for sh, rid in ordered:
                 try:
-                    out.append(Image.open(io.BytesIO(p.image.blob)).convert("RGBA"))
+                    out.append(Image.open(io.BytesIO(slide.part.related_part(rid).blob)).convert("RGBA"))
                 except Exception:
                     pass
             return out
+    print("(no PowerPoint slide with the client logos was found: using the PDF pages instead)")
     return []
 
 
