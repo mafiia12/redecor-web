@@ -41,7 +41,7 @@ export default function Home() {
           </div>
         </div>
         <div className="hero__media" ref={heroRef}>
-          <SitePhoto slot="home-hero" ratio="16/9" dark priority alt={t.home.heroAlt} hint="Hero: finished villa living room, warm daylight" sizes="(min-width:1440px) 1440px, 100vw" />
+          <SitePhoto hideIfEmpty slot="home-hero" ratio="16/9" dark priority alt={t.home.heroAlt} hint="Hero: finished villa living room, warm daylight" sizes="(min-width:1440px) 1440px, 100vw" />
         </div>
       </section>
 

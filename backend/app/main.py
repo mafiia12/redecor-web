@@ -5,7 +5,7 @@ from xml.sax.saxutils import escape
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
@@ -107,6 +107,11 @@ if (_dist / "index.html").exists():
     if (_dist / "assets").exists():
         app.mount("/assets", ImmutableStatic(directory=_dist / "assets"), name="assets")
 
+    # Social crawlers (WhatsApp, Facebook) need an absolute og:image URL, so inject SITE_URL once.
+    _index_html = (_dist / "index.html").read_text(encoding="utf-8").replace(
+        'content="/og-default.png"', f'content="{settings.site_url}/og-default.png"'
+    )
+
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str):
         target = (_dist / path).resolve()
@@ -114,4 +119,4 @@ if (_dist / "index.html").exists():
             return FileResponse(target)
         if path.startswith(("api/", "media/")):
             raise HTTPException(404)
-        return FileResponse(_dist / "index.html", headers={"Cache-Control": "no-cache"})
+        return HTMLResponse(_index_html, headers={"Cache-Control": "no-cache"})

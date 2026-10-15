@@ -36,7 +36,7 @@ export default function ServiceDetail() {
         </div>
       </section>
       <div className="cover ratio-mobile-45">
-        <SitePhoto slot={`service-${s.slug}-hero`} ratio="16/9" priority hint={HINTS[s.slug]} alt={s.title} sizes="(min-width:1440px) 1440px, 100vw" />
+        <SitePhoto hideIfEmpty slot={`service-${s.slug}-hero`} ratio="16/9" priority hint={HINTS[s.slug]} alt={s.title} sizes="(min-width:1440px) 1440px, 100vw" />
       </div>
 
       {s.included.length > 0 && <section className="section">

@@ -16,7 +16,7 @@ interface PhotoProps {
   className?: string;
 }
 
-export function Photo({ img, alt = "", ratio = "4/3", radius = 0, dark, priority, sizes = "100vw", hint, className = "" }: PhotoProps) {
+export function Photo({ img, alt = "", ratio = "4/3", radius = 0, dark, priority, sizes = "100vw", className = "" }: PhotoProps) {
   const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
 
@@ -47,21 +47,19 @@ export function Photo({ img, alt = "", ratio = "4/3", radius = 0, dark, priority
           onError={() => setLoaded(true)}
         />
       ) : (
-        hint && (
-          <div className="photo__empty" aria-hidden="true">
-            {hint}
-          </div>
-        )
+        <div className="photo__empty" aria-hidden="true" />
       )}
     </div>
   );
 }
 
 /** A photo that comes from a named site slot managed in the admin ("home-hero", "service-fitout"...). */
-export function SitePhoto({ slot, hint, alt, ...rest }: Omit<PhotoProps, "img"> & { slot: string }) {
+export function SitePhoto({ slot, alt, hideIfEmpty, ...rest }: Omit<PhotoProps, "img"> & { slot: string; hideIfEmpty?: boolean }) {
   const { data } = useData();
   const { lang } = useLang();
   const s = data?.site_images[slot];
   const text = s ? (lang === "ar" && s.alt_ar ? s.alt_ar : s.alt_en) || alt : alt;
-  return <Photo img={s?.image} alt={text} hint={hint} {...rest} />;
+  // Big covers/heroes disappear until a real photo is uploaded, rather than showing an empty box.
+  if (hideIfEmpty && data && !s) return null;
+  return <Photo img={s?.image} alt={text} {...rest} />;
 }

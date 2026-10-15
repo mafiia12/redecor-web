@@ -17,7 +17,7 @@ export default function About() {
         </div>
       </section>
       <div className="cover ratio-mobile-45">
-        <SitePhoto slot="about-hero" ratio="16/9" priority hint="About: team reviewing finishes on site" alt={t.about.title} sizes="(min-width:1440px) 1440px, 100vw" />
+        <SitePhoto hideIfEmpty slot="about-hero" ratio="16/9" priority hint="About: team reviewing finishes on site" alt={t.about.title} sizes="(min-width:1440px) 1440px, 100vw" />
       </div>
       <section className="section">
         <div className="container">

@@ -526,11 +526,12 @@ p {
 }
 .photo__empty::before {
   content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px dashed currentColor;
-  opacity: 0.35;
-  border-radius: calc(var(--r, 0px) * 0.6);
+  width: min(38%, 120px);
+  aspect-ratio: 1071 / 612;
+  background: currentColor;
+  opacity: 0.16;
+  -webkit-mask: url("/logo-ink.svg") center / contain no-repeat;
+  mask: url("/logo-ink.svg") center / contain no-repeat;
 }
 .badge {
   position: absolute;
@@ -1548,3 +1549,7 @@ a.wa__row:hover {
   .grid--4 .stile__title { font-size: 24px; }
   .grid--4 .stile__body { padding: 24px; }
 }
+
+.cover:empty, .hero__media:empty { display: none; }
+.hero:not(:has(.photo)) .hero__copy { padding-bottom: 96px; }
+@media (min-width: 900px) { .hero:not(:has(.photo)) .hero__copy { padding-bottom: 160px; } }
