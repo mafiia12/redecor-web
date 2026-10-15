@@ -19,8 +19,10 @@ _SHARED = dict(
     hours_en="[Days · Hours]",
     hours_ar="[الأيام · الساعات]",
 )
+ADDR_EN = "14 Abdel Qawy Ahmed St., off Shehab St.\nMohandessin, Giza, Egypt"
+ADDR_AR = "١٤ شارع عبد القوي أحمد، متفرع من شارع شهاب\nالمهندسين، الجيزة، مصر"
 OFFICES = {
-    "eg": dict(address_en="[Street, district]\n[City], Egypt", address_ar="[الشارع، الحي]\n[المدينة]، مصر", **_SHARED),
+    "eg": dict(address_en=ADDR_EN, address_ar=ADDR_AR, **_SHARED),
     "qa": dict(address_en="[Street, zone]\n[City], Qatar", address_ar="[الشارع، المنطقة]\n[المدينة]، قطر", **_SHARED),
 }
 
