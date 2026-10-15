@@ -164,18 +164,36 @@ def pptx_logos(pdf_dir: Path):
             text = " ".join(sh.text_frame.text for sh in shapes if sh.has_text_frame).upper()
             if "OUR CLIENTS" not in text:
                 continue
-            cands = []
+            import hashlib as _h
+
+            allp = []  # (shape, rId, blob hash)
             for sh in shapes:
                 rids = sh._element.xpath(".//a:blip/@r:embed")
-                if rids and min(sh.width, sh.height) > 300000 and sh.width < prs.slide_width * 0.4:
-                    cands.append((sh, rids[0]))
-            print(f"{f.name}: slide 'OUR CLIENTS' has {len(cands)} picture shapes")
+                if rids and min(sh.width, sh.height) > 150000 and sh.width < prs.slide_width * 0.5:
+                    try:
+                        blob = slide.part.related_part(rids[0]).blob
+                    except Exception:
+                        continue
+                    allp.append((sh, rids[0], _h.md5(blob).hexdigest()))
+            counts: dict[str, int] = {}
+            for _, _, hx in allp:
+                counts[hx] = counts.get(hx, 0) + 1
+            # a picture repeated many times is the round badge/frame, not a logo
+            badges = [c for c in allp if counts[c[2]] >= 3]
+            cands = [c for c in allp if counts[c[2]] < 3]
+            print(f"{f.name}: slide 'OUR CLIENTS' has {len(allp)} pictures ({len(badges)} repeated badge frames, {len(cands)} others)")
+            if badges:  # keep only pictures that sit inside a badge (drops the Redecor logo and decorations)
+                def inside(c):
+                    cx, cy = c[0].left + c[0].width / 2, c[0].top + c[0].height / 2
+                    return any(b[0].left <= cx <= b[0].left + b[0].width and b[0].top <= cy <= b[0].top + b[0].height for b in badges)
+                cands = [c for c in cands if inside(c)]
+            elif len(cands) > 6:  # no frames: skip anything in the left third (the Redecor logo)
+                cands = [c for c in cands if c[0].left + c[0].width / 2 > prs.slide_width * 0.4]
+            print(f"  {len(cands)} logo pictures")
             if len(cands) < 6:
                 continue
-            # keep the logo badges: similar size and roughly square (drops the Redecor logo / decorations)
-            med_w = sorted(c[0].width for c in cands)[len(cands) // 2]
-            cands = [c for c in cands if 0.7 < c[0].width / med_w < 1.4 and 0.75 < c[0].width / c[0].height < 1.33]
-            band = med_w * 0.5
+            med_h = sorted(c[0].height for c in cands)[len(cands) // 2]
+            band = med_h * 0.8
             cands.sort(key=lambda c: c[0].top + c[0].height / 2)
             rows, cur = [], [cands[0]]
             for c in cands[1:]:
@@ -186,12 +204,14 @@ def pptx_logos(pdf_dir: Path):
             rows.append(cur)
             ordered = [c for r in rows for c in sorted(r, key=lambda q: q[0].left + q[0].width / 2)]
             print(f"  using {len(ordered)} logos in {len(rows)} rows")
-            out = []
-            for sh, rid in ordered:
+            out, failed = [], 0
+            for sh, rid, _ in ordered:
                 try:
                     out.append(Image.open(io.BytesIO(slide.part.related_part(rid).blob)).convert("RGBA"))
                 except Exception:
-                    pass
+                    failed += 1  # e.g. vector (EMF/SVG) pictures that Pillow cannot read
+            if failed:
+                print(f"  ! {failed} pictures could not be read (vector format?)")
             return out
     print("(no PowerPoint slide with the client logos was found: using the PDF pages instead)")
     return []
