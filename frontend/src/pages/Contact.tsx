@@ -1,4 +1,5 @@
 import { EnquiryForm } from "../components/EnquiryForm";
+import { Faq } from "../components/Faq";
 import { OfficeCard } from "../components/OfficeCard";
 import { Reveal } from "../components/Reveal";
 import { useData, useLang, usePageMeta, visibleOffices } from "../lib/context";
@@ -32,6 +33,7 @@ export default function Contact() {
           </aside>
         </div>
       </section>
+      <Faq />
     </>
   );
 }

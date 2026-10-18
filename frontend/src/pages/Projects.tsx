@@ -1,6 +1,6 @@
-import type { CSSProperties } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
+import { ProjectGridSkeleton } from "../components/Cards";
+import { ProjectCollection, preferGrid } from "../components/ProjectIndex";
 import { WorkHero } from "../components/WorkHero";
 import { Segmented } from "../components/Filters";
 import { useData, useLang, usePageMeta } from "../lib/context";
@@ -21,7 +21,7 @@ export default function Projects() {
   const country = COUNTRIES.includes(rawCountry as Country) ? (rawCountry as Country) : "all";
   const type = TYPES.includes(rawType as ProjectType) ? (rawType as ProjectType) : "all";
 
-  const update = (key: "country" | "type", value: string) => {
+  const update = (key: "country" | "type" | "view", value: string) => {
     const next = new URLSearchParams(params);
     if (value === "all") next.delete(key);
     else next.set(key, value);
@@ -39,6 +39,10 @@ export default function Projects() {
     [p.title_en, p.title_ar, p.city_en, p.city_ar, p.tagline_en, p.tagline_ar, t.types[p.type], t.countries[p.country]]
       .some((v) => v?.toLowerCase().includes(needle));
   const list = all.filter((p) => (country === "all" || p.country === country) && (type === "all" || p.type === type) && matches(p));
+  // List until most projects have photos (then the grid shows them off); the visitor's choice wins (?view=).
+  const rawView = params.get("view");
+  const autoView = preferGrid(list) ? "grid" : "list";
+  const view: "list" | "grid" = rawView === "list" || rawView === "grid" ? rawView : autoView;
   const setQuery = (value: string) => {
     const next = new URLSearchParams(params);
     if (value.trim()) next.set("q", value);
@@ -71,6 +75,12 @@ export default function Projects() {
                 <input type="search" className="search__input" placeholder={t.projects.searchPh} value={q} onChange={(e) => setQuery(e.target.value)} maxLength={60} />
               </label>
             )}
+            <Segmented
+              label={t.projects.view}
+              value={view}
+              onChange={(v) => update("view", v === autoView ? "all" : v)}
+              options={[{ value: "list" as const, label: t.projects.viewList }, { value: "grid" as const, label: t.projects.viewGrid }]}
+            />
             {data && <span className="caption count" aria-live="polite">{t.projects.count(list.length)}</span>}
           </div>
           )}
@@ -95,11 +105,7 @@ export default function Projects() {
               <button className="btn btn--outline" onClick={() => setParams({}, { replace: true })}>{t.projects.clear}</button>
             </div>
           ) : (
-            <div className="mosaic" style={{ "--n": list.length } as CSSProperties}>
-              {list.map((p) => (
-                <ProjectTile key={p.id} p={p} />
-              ))}
-            </div>
+            <ProjectCollection projects={list} view={view} />
           )}
         </div>
       </section>

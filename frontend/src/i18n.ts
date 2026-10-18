@@ -32,6 +32,9 @@ const en = {
     projectsSub: "A showcase of craftsmanship, precision, and thoughtful execution.",
     allProjects: "See all projects ›",
     heroAlt: "A finished interior by RE DECOR & MORE",
+    ourWork: "Our work",
+    // Owner's statement, shown large on the home page. Empty = the section is hidden.
+    philosophy: { quote: "", by: "" },
   },
   how: {
     title: "How We Work",
@@ -43,6 +46,8 @@ const en = {
     ] as [string, string, string][],
   },
   clients: { title: "Clients", sub: "Selected clients in Egypt and Qatar.", logo: "[Client logo]" },
+  // Questions and answers come from the owner. No items = the section is hidden.
+  faq: { eyebrow: "FAQ", title: "Frequently asked questions", sub: "", items: [] as [string, string][] },
   cta2: { title: "Planning a project?", sub: "Tell us about your space, and we’ll arrange a consultation.", wa: "Message us on WhatsApp" },
   filters: { all: "All", eg: "Egypt", qa: "Qatar", sa: "Saudi Arabia", country: "Country", type: "Project type" },
   countries: { eg: "Egypt", qa: "Qatar", sa: "Saudi Arabia" } as Record<string, string>,
@@ -70,6 +75,13 @@ const en = {
     facts: { client: "Client", city: "Location", type: "Type", year: "Year", area: "Area", scope: "Scope" },
     notFound: "This project was not found.",
     imgEmpty: "Photo coming soon",
+    view: "View",
+    viewList: "List",
+    viewGrid: "Grid",
+    cols: { no: "No.", project: "Project", type: "Type", location: "Location", year: "Year" },
+    kicker: "Project",
+    views: "Concept & views",
+    executed: "Completed work",
   },
   services: {
     kicker: "Our Services",
@@ -217,6 +229,8 @@ const ar: typeof en = {
     projectsSub: "عرض لأعمال تعكس الإتقان والدقة والتنفيذ المدروس.",
     allProjects: "عرض كل المشاريع ‹",
     heroAlt: "مساحة داخلية مكتملة من ريديكور آند مور",
+    ourWork: "أعمالنا",
+    philosophy: { quote: "", by: "" },
   },
   how: {
     title: "كيف نعمل",
@@ -228,6 +242,7 @@ const ar: typeof en = {
     ],
   },
   clients: { title: "عملاؤنا", sub: "عملاء مختارون في مصر وقطر.", logo: "[شعار العميل]" },
+  faq: { eyebrow: "أسئلة شائعة", title: "الأسئلة الشائعة", sub: "", items: [] },
   cta2: { title: "هل تخطط لمشروع؟", sub: "أخبرنا عن مساحتك وسنرتّب لك استشارة.", wa: "راسلنا على واتساب" },
   filters: { all: "الكل", eg: "مصر", qa: "قطر", sa: "السعودية", country: "الدولة", type: "نوع المشروع" },
   countries: { eg: "مصر", qa: "قطر", sa: "السعودية" },
@@ -255,6 +270,13 @@ const ar: typeof en = {
     facts: { client: "العميل", city: "الموقع", type: "النوع", year: "السنة", area: "المساحة", scope: "نطاق العمل" },
     notFound: "لم يتم العثور على هذا المشروع.",
     imgEmpty: "الصورة قريبًا",
+    view: "طريقة العرض",
+    viewList: "قائمة",
+    viewGrid: "شبكة",
+    cols: { no: "رقم", project: "المشروع", type: "النوع", location: "الموقع", year: "السنة" },
+    kicker: "مشروع",
+    views: "التصورات التصميمية",
+    executed: "الأعمال المنفّذة",
   },
   services: {
     kicker: "خدماتنا",

@@ -1,7 +1,6 @@
-import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
+import { ProjectGridSkeleton } from "../components/Cards";
 import { SectionHead } from "../components/SectionHead";
 import { Segmented } from "../components/Filters";
 import { ClientWall } from "../components/ClientWall";
@@ -10,6 +9,9 @@ import { Divisions } from "../components/Divisions";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
 import { ProjectStrip } from "../components/ProjectStrip";
+import { ProjectCollection } from "../components/ProjectIndex";
+import { Statement } from "../components/Statement";
+import { Faq } from "../components/Faq";
 import { useData, useLang, usePageMeta } from "../lib/context";
 import type { Country } from "../lib/api";
 import { useHeroScale } from "../lib/hooks";
@@ -49,7 +51,7 @@ export default function Home() {
               <p>{t.home.sub}</p>
               <div className="lead-hero__ctas">
                 <Link to={lp("/contact")} className="btn" data-track="cta">{t.cta}</Link>
-                <Link to={lp("/projects")} className="link">{t.home.seeProjects}</Link>
+                <Link to={lp("/projects")} className="btn btn--quiet">{t.home.ourWork}</Link>
               </div>
             </div>
           </div>
@@ -104,11 +106,7 @@ export default function Home() {
           ) : !data ? (
             <ProjectGridSkeleton />
           ) : (
-            <div className="mosaic" style={{ "--n": featured.length } as CSSProperties}>
-              {featured.map((p) => (
-                <ProjectTile key={p.id} p={p} />
-              ))}
-            </div>
+            <ProjectCollection projects={featured} />
           )}
           <div style={{ marginTop: 48 }}>
             <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
@@ -117,10 +115,12 @@ export default function Home() {
       </section>
       )}
 
+      <Statement />
       <Divisions />
       <HowWeWork />
       <ClientWall />
       <Testimonials />
+      <Faq />
     </>
   );
 }

@@ -9,7 +9,11 @@ test.describe("public site", () => {
     await oneH1(page);
     await expect(page.locator("h1")).toContainText("Spaces, finished");
     await expect(page.locator(".svc__row")).toHaveCount(4);
-    await expect(page.locator(".tile--type").first()).toBeVisible(); // text-only projects render as typographic tiles
+    await expect(page.locator("#projects-title")).toBeVisible();
+    // without photos, selected work is the editorial list (no half-empty tile grid)
+    await expect(page.locator(".pindex__row").first()).toBeVisible();
+    await expect(page.locator(".lead-hero__ctas .btn")).toHaveCount(2); // primary + quiet secondary
+    await expect(page.locator(".statement, #faq-title")).toHaveCount(0); // hidden until the owner's text exists
     await expect(page.locator(".photo__empty")).toHaveCount(0); // never grey placeholder boxes
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
     done();
@@ -28,14 +32,31 @@ test.describe("public site", () => {
   test("projects: filter and search", async ({ page }) => {
     await page.goto("/projects");
     await page.getByRole("group", { name: "Project type" }).getByRole("button", { name: "Hospitality" }).click();
-    await expect(page.locator(".tile")).toHaveCount(1);
+    await expect(page.locator(".pindex__row")).toHaveCount(1);
     await expect(page).toHaveURL(/type=hospitality/);
     await page.goto("/projects");
     const search = page.getByPlaceholder("Name, city or type");
     if (await search.count()) {
       await search.fill("villa");
-      await expect(page.locator(".tile")).toHaveCount(1);
+      await expect(page.locator(".pindex__row")).toHaveCount(1);
     }
+  });
+
+  test("projects: list by default without photos, grid on request, choice kept in the URL", async ({ page }) => {
+    await page.goto("/projects");
+    const view = page.getByRole("group", { name: "View" });
+    await expect(view.getByRole("button", { name: "List" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".pindex__row").first()).toContainText("E2E");
+    await view.getByRole("button", { name: "Grid" }).click();
+    await expect(page).toHaveURL(/view=grid/);
+    await expect(page.locator(".tile--type").first()).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".tile--type").first()).toBeVisible();
+    await view.getByRole("button", { name: "List" }).click();
+    await expect(page).not.toHaveURL(/view=/); // back to the automatic choice
+    // the row opens the project
+    await page.locator(".pindex__row", { hasText: "E2E Office Fit-out" }).click();
+    await expect(page.locator("h1")).toHaveText("E2E Office Fit-out");
   });
 
   test("project page: facts, server-side head, prev/next, contextual CTA", async ({ page, request }) => {
@@ -45,6 +66,8 @@ test.describe("public site", () => {
     await page.goto("/projects/e2e-office-fit-out");
     await oneH1(page);
     await expect(page.locator(".case__facts")).toContainText("New Cairo");
+    await expect(page.locator(".case__crumbs")).toContainText("E2E Office Fit-out");
+    await expect(page.getByRole("link", { name: "Ask about this project" })).toHaveCount(1); // no duplicate CTA on a short page
     await expect(page.locator(".case__pn-link--next")).toContainText("E2E Coastal Restaurant");
     await page.getByRole("link", { name: "Ask about this project" }).click();
     await expect(page).toHaveURL(/\/contact\?about=/);
@@ -54,7 +77,7 @@ test.describe("public site", () => {
   test("services: page and related work", async ({ page }) => {
     await page.goto("/services/fitout");
     await oneH1(page);
-    await expect(page.locator("#related .tile").first()).toBeVisible();
+    await expect(page.locator("#related .pindex__row").first()).toBeVisible();
   });
 
   test("unknown page returns 404 with a helpful page", async ({ page }) => {

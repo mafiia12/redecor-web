@@ -1,8 +1,8 @@
-import { useEffect, type CSSProperties } from "react";
+import { useEffect } from "react";
 import { setWhatsAppContext } from "../components/WhatsApp";
 import { track } from "../lib/analytics";
 import { Link, useParams } from "react-router-dom";
-import { ProjectTile } from "../components/Cards";
+import { ProjectCollection } from "../components/ProjectIndex";
 import { SitePhoto } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
 import { services } from "../i18n";
@@ -95,11 +95,7 @@ export default function ServiceDetail() {
               </div>
               <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
             </Reveal>
-            <div className="mosaic" style={{ "--n": related.length } as CSSProperties}>
-              {related.map((p) => (
-                <ProjectTile key={p.id} p={p} />
-              ))}
-            </div>
+            <ProjectCollection projects={related} />
           </div>
         </section>
       )}

@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ProjectTile } from "../components/Cards";
+import { ProjectCollection } from "../components/ProjectIndex";
 import { Photo } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
 import { ApiError, getProject, type GalleryImage, type ProjectDetail as Detail } from "../lib/api";
@@ -128,52 +128,74 @@ export function ProjectView({ p, preview = false }: { p: Detail; preview?: boole
     );
   };
 
+  // Renders and site photos are shown as separate groups when a project has both.
+  const views = rest.filter((g) => g.kind === "render" || (!g.kind && g.is_render));
+  const done = rest.filter((g) => !views.includes(g));
+  const groups = views.length && done.length ? [[t.projects.views, views], [t.projects.executed, done]] as const : [["", rest]] as const;
+
   return (
     <article className="case fade-in">
-      <div className="case__col">
-        <Link to={lp("/projects")} className="case__back">{t.back}</Link>
-        <h1 className="case__title" {...title.attrs}>{title.text}</h1>
-        {p.logo && (
-          <div className="case__logo">
-            <img src={p.logo.src} alt={p.client_name || title.text} width={p.logo.width} height={p.logo.height} />
-          </div>
-        )}
-      </div>
+      <header className="case__head container">
+        <div className="case__lead">
+          <nav className="case__crumbs" aria-label={t.projects.title}>
+            <Link to={lp("/projects")} className="case__back">{t.projects.title}</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" {...title.attrs}>{title.text}</span>
+          </nav>
+          <span className="case__kicker">{t.types[p.type]}{p.is_render && <span className="pindex__tag">{t.projects.renderShort}</span>}</span>
+          <h1 className="case__title" {...title.attrs}>{title.text}</h1>
+          {tagline.text && <p className="case__tagline" {...tagline.attrs}>{tagline.text}</p>}
+          {summary.text && <p className="case__summary" {...summary.attrs}>{summary.text}</p>}
+          {!preview && (
+            <div className="case__ctas">
+              <Link to={ask} className="btn" data-track="cta">{t.projects.askCta}</Link>
+            </div>
+          )}
+        </div>
+        <aside className="case__side">
+          {p.logo && (
+            <div className="case__logo">
+              <img src={p.logo.src} alt={p.client_name || title.text} width={p.logo.width} height={p.logo.height} />
+            </div>
+          )}
+          {details.length > 0 && (
+            <dl className="case__facts" {...detailsLoc.attrs}>
+              {details.map(([k, v], i) => (k ? <div key={i}><dt>{k}</dt><dd>{v}</dd></div> : <div key={i}><dd>{v}</dd></div>))}
+            </dl>
+          )}
+        </aside>
+      </header>
 
       {cover && (
         <div className="case__hero">
-          {photo(cover, "(min-width:1200px) 1200px, 100vw", true)}
+          {photo(cover, "(min-width:1440px) 1440px, 100vw", true)}
           {(p.is_render || cover.is_render) && <span className="badge">{t.projects.render}</span>}
         </div>
       )}
 
-      <div className={`case__col case__text${cover ? "" : " case__text--solo"}`}>
-        {tagline.text && <p className="case__tagline" {...tagline.attrs}>{tagline.text}</p>}
-        {summary.text && <p {...summary.attrs}>{summary.text}</p>}
-        {details.length > 0 && (
-          <dl className="case__facts" {...detailsLoc.attrs}>
-            {details.map(([k, v], i) => (k ? <div key={i} style={{ display: "contents" }}><dt>{k}</dt><dd>{v}</dd></div> : <dd key={i} style={{ gridColumn: "1 / -1" }}>{v}</dd>))}
-          </dl>
-        )}
-        {story.map((s, i) => (
-          <section key={i} {...storyLoc.attrs}>
-            {s.head && <h2>{s.head}</h2>}
-            {s.paras.map((para, j) => <p key={j}>{para}</p>)}
-          </section>
-        ))}
-      </div>
+      {story.length > 0 && (
+        <div className="case__story container">
+          {story.map((s, i) => (
+            <section key={i} {...storyLoc.attrs}>
+              {s.head && <h2>{s.head}</h2>}
+              {s.paras.map((para, j) => <p key={j}>{para}</p>)}
+            </section>
+          ))}
+        </div>
+      )}
 
-      {rest.length > 0 && (
-        <div className="case__gallery">
-          {buildRows(rest).map((row, ri) => (
+      {rest.length > 0 && groups.map(([heading, items]) => (
+        <section key={heading || "gallery"} className="case__gallery" aria-label={heading || undefined}>
+          {heading && <h2 className="case__group">{heading}</h2>}
+          {buildRows([...items]).map((row, ri) => (
             <Reveal key={ri} className={row.length === 2 ? "case__row case__row--pair" : "case__row"}>
               {row.map((g) => {
                 const cap = loc(g, "caption", lang);
                 return (
                   <figure key={g.id}>
                     <div style={{ position: "relative" }}>
-                      {photo(g, row.length === 2 ? "(min-width:900px) 600px, 100vw" : "(min-width:1200px) 1200px, 100vw")}
-                      {g.is_render && !p.is_render && <span className="badge badge--sm">{t.projects.renderShort}</span>}
+                      {photo(g, row.length === 2 ? "(min-width:900px) 720px, 100vw" : "(min-width:1440px) 1440px, 100vw")}
+                      {g.is_render && !p.is_render && !heading && <span className="badge badge--sm">{t.projects.renderShort}</span>}
                     </div>
                     {cap.text && <figcaption {...cap.attrs}>{cap.text}</figcaption>}
                   </figure>
@@ -181,10 +203,10 @@ export function ProjectView({ p, preview = false }: { p: Detail; preview?: boole
               })}
             </Reveal>
           ))}
-        </div>
-      )}
+        </section>
+      ))}
 
-      {!preview && (
+      {!preview && (rest.length > 0 || story.length > 0) && (
         <section className="case__ask">
           <div className="case__col">
             <h2>{t.projects.askTitle}</h2>
@@ -220,9 +242,7 @@ export function ProjectView({ p, preview = false }: { p: Detail; preview?: boole
               <h2 className="h2">{t.projects.related}</h2>
               <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
             </Reveal>
-            <div className="mosaic" style={{ "--n": p.related.length } as CSSProperties}>
-              {p.related.map((r) => <ProjectTile key={r.id} p={r} />)}
-            </div>
+            <ProjectCollection projects={p.related} />
           </div>
         </section>
       )}
