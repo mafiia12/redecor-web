@@ -9,10 +9,12 @@ export function ProjectCard({ p, sizes = "(min-width:1000px) 384px, (min-width:6
   const title = pick(p, "title", lang);
   return (
     <Link to={lp(`/projects/${p.slug}`)} className="pcard">
-      <div className="pcard__media">
-        <Photo img={p.cover} alt={title} ratio="4/5" hint={t.projects.imgEmpty} sizes={sizes} />
-        {p.is_render && <span className="badge">{t.projects.render}</span>}
-      </div>
+      {p.cover && (
+        <div className="pcard__media">
+          <Photo img={p.cover} alt={title} ratio="4/5" hint={t.projects.imgEmpty} sizes={sizes} />
+          {p.is_render && <span className="badge">{t.projects.render}</span>}
+        </div>
+      )}
       <div className="pcard__body">
         <span className="pcard__title">{title}</span>
         <span className="caption">{meta}</span>
@@ -53,7 +55,8 @@ export function ProjectTile({ p }: { p: ProjectCardData }) {
   const title = pick(p, "title", lang);
   const meta = [p.year, pick(p, "city", lang), t.types[p.type]].filter(Boolean)[0] ?? t.types[p.type];
   return (
-    <Link to={lp(`/projects/${p.slug}`)} className="tile" aria-label={title}>
+    <Link to={lp(`/projects/${p.slug}`)} className={`tile${p.cover ? "" : " tile--text"}`} aria-label={title}>
+      {!p.cover && <span className="tile__name">{title}</span>}
       <Photo img={p.cover} alt={title} ratio="5/4" sizes="(min-width:1100px) 25vw, (min-width:700px) 33vw, 50vw" />
       {p.is_render && <span className="badge">{t.projects.render}</span>}
       <span className="tile__veil">

@@ -52,6 +52,9 @@ class Project(Base):
     # Long-form text for the project page. Blank line = new paragraph; a line starting with "## " is a heading.
     story_en: Mapped[str] = mapped_column(Text, default="", server_default="")
     story_ar: Mapped[str] = mapped_column(Text, default="", server_default="")
+    # One "Label: Value" per line (Client: ..., Area: ...), shown as a facts list on the project page.
+    details_en: Mapped[str] = mapped_column(Text, default="", server_default="")
+    details_ar: Mapped[str] = mapped_column(Text, default="", server_default="")
     client_name: Mapped[str] = mapped_column(String(200), default="", server_default="")
     logo_image_id: Mapped[int | None] = mapped_column(ForeignKey("images.id"), nullable=True)
     is_render: Mapped[bool] = mapped_column(Boolean, default=False)

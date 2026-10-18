@@ -32,7 +32,7 @@ export function ProjectsAdmin() {
 
 const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images" | "logo"> = {
   title_en: "", title_ar: "", summary_en: "", summary_ar: "", city_en: "", city_ar: "", country: "eg", type: "residential",
-  year: null, area_m2: null, scope_en: "", scope_ar: "", tagline_en: "", tagline_ar: "", story_en: "", story_ar: "", client_name: "", is_render: false, featured: true, published: true, sort_order: 0,
+  year: null, area_m2: null, scope_en: "", scope_ar: "", tagline_en: "", tagline_ar: "", details_en: "", details_ar: "", story_en: "", story_ar: "", client_name: "", is_render: false, featured: true, published: true, sort_order: 0,
 };
 
 export function ProjectEdit() {
@@ -168,6 +168,8 @@ export function ProjectEdit() {
           <span />
           <label className="f">Tagline (English)<input className="input" value={v.tagline_en} onChange={(e) => set("tagline_en", e.target.value)} /></label>
           <label className="f">Tagline (Arabic)<input className="input" dir="rtl" value={v.tagline_ar} onChange={(e) => set("tagline_ar", e.target.value)} /></label>
+          <label className="f">Details (English) — one per line, “Label: Value” (Client: …, Area: …, Status: …)<textarea className="textarea" rows={5} value={v.details_en} onChange={(e) => set("details_en", e.target.value)} /></label>
+          <label className="f">Details (Arabic)<textarea className="textarea" rows={5} dir="rtl" value={v.details_ar} onChange={(e) => set("details_ar", e.target.value)} /></label>
           <label className="f">Story (English) — start a section with “## Heading”, blank line between paragraphs<textarea className="textarea" rows={8} value={v.story_en} onChange={(e) => set("story_en", e.target.value)} /></label>
           <label className="f">Story (Arabic)<textarea className="textarea" rows={8} dir="rtl" value={v.story_ar} onChange={(e) => set("story_ar", e.target.value)} /></label>
           <label className="f">Display order (lower first)<input className="input" type="number" value={v.sort_order} onChange={(e) => set("sort_order", Number(e.target.value) || 0)} /></label>

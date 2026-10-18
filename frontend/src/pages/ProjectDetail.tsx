@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ProjectTile } from "../components/Cards";
@@ -19,6 +20,18 @@ function parseStory(text: string) {
     else out.push({ head: "", paras: [b] });
   }
   return out;
+}
+
+/** "Label: Value" per line (also accepts the Arabic colon). */
+function parseDetails(text: string) {
+  return text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const m = l.match(/^([^:：]{1,40})[:：]\s*(.+)$/);
+      return m ? ([m[1].trim(), m[2].trim()] as const) : (["", l] as const);
+    });
 }
 
 /** Consecutive "half" images pair up; everything else is a full row. */
@@ -66,6 +79,7 @@ export default function ProjectDetail() {
   const tagline = pick(p, "tagline", lang);
   const summary = pick(p, "summary", lang);
   const story = parseStory(pick(p, "story", lang));
+  const details = parseDetails(pick(p, "details", lang));
   const place = [pick(p, "city", lang), t.countries[p.country]].filter(Boolean).join(lang === "ar" ? "، " : ", ");
   const area = p.area_m2 ? `${p.area_m2.toLocaleString(lang === "ar" ? "ar-EG" : "en")} ${t.form.unit}` : "";
   const meta = [t.types[p.type], p.year, area, pick(p, "scope", lang)].filter(Boolean).join(" · ");
@@ -94,6 +108,11 @@ export default function ProjectDetail() {
         {summary && <p>{summary}</p>}
         <p className="case__meta">{[place, p.client_name].filter(Boolean).join(" · ")}</p>
         {meta && <p className="case__meta">{meta}</p>}
+        {details.length > 0 && (
+          <dl className="case__facts">
+            {details.map(([k, v], i) => (k ? <div key={i} style={{ display: "contents" }}><dt>{k}</dt><dd>{v}</dd></div> : <dd key={i} style={{ gridColumn: "1 / -1" }}>{v}</dd>))}
+          </dl>
+        )}
         {story.map((s, i) => (
           <section key={i}>
             {s.head && <h2>{s.head}</h2>}
@@ -128,7 +147,7 @@ export default function ProjectDetail() {
               <h2 className="h2">{t.projects.related}</h2>
               <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
             </Reveal>
-            <div className="mosaic">
+            <div className="mosaic" style={{ "--n": p.related.length } as CSSProperties}>
               {p.related.map((r) => <ProjectTile key={r.id} p={r} />)}
             </div>
           </div>

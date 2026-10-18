@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/__pycache__
+**/*.db
+.env
+.git
+backend/uploads
+portfolio_preview
+clients_preview

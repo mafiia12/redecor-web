@@ -85,6 +85,8 @@ export interface AdminProject {
   tagline_ar: string;
   story_en: string;
   story_ar: string;
+  details_en: string;
+  details_ar: string;
   client_name: string;
   logo: Img | null;
   is_render: boolean;

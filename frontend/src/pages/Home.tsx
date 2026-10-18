@@ -1,8 +1,10 @@
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ProjectGridSkeleton, ProjectTile, ServiceTile } from "../components/Cards";
 import { Segmented } from "../components/Filters";
 import { ClientWall } from "../components/ClientWall";
+import { Divisions } from "../components/Divisions";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
 import { ProjectStrip } from "../components/ProjectStrip";
@@ -10,6 +12,7 @@ import { Reveal } from "../components/Reveal";
 import { useData, useLang, usePageMeta } from "../lib/context";
 import type { Country } from "../lib/api";
 import { useHeroScale } from "../lib/hooks";
+import { useMode } from "../lib/theme";
 import { services } from "../i18n";
 
 const SERVICE_HINTS: Record<string, string> = {
@@ -24,6 +27,7 @@ export default function Home() {
   const { data, error, reload } = useData();
   const [country, setCountry] = useState<"all" | Country>("all");
   const heroRef = useHeroScale<HTMLDivElement>();
+  const mode = useMode();
   usePageMeta(t.home.title, t.home.description);
 
   const strip = useMemo(() => (data?.projects ?? []).filter((p) => p.featured && p.cover).slice(0, 8), [data]);
@@ -40,6 +44,7 @@ export default function Home() {
           <ProjectStrip projects={strip} />
           <section className="intro">
             <div className="container">
+              <div className="brandmark"><img src={mode === "dark" ? "/logo-light.svg" : "/logo-ink.svg"} alt={t.brand} width={260} height={150} /></div>
               <h1 className="display">{t.home.h1}</h1>
               <p className="lead" style={{ maxWidth: 720 }}>{t.home.sub}</p>
               <div className="btn-row center btn-row--stack" style={{ marginTop: 12 }}>
@@ -52,6 +57,7 @@ export default function Home() {
       ) : (
       <section className="hero" data-dark>
         <div className="hero__copy">
+          <div className="brandmark"><img src="/logo-light.svg" alt={t.brand} width={260} height={150} /></div>
           <h1 className="display">{t.home.h1}</h1>
           <p className="lead">{t.home.sub}</p>
           <div className="btn-row center btn-row--stack" style={{ marginTop: 16 }}>
@@ -88,7 +94,7 @@ export default function Home() {
               <h2 className="h2" id="projects-title">{t.home.projectsTitle}</h2>
               <p className="lead">{t.home.projectsSub}</p>
             </div>
-            <Segmented
+            {new Set((data?.projects ?? []).map((p) => p.country)).size > 1 && <Segmented
               label={t.filters.country}
               value={country}
               onChange={setCountry}
@@ -98,7 +104,7 @@ export default function Home() {
                   .filter((c) => (data?.projects ?? []).some((p) => p.country === c))
                   .map((c) => ({ value: c, label: t.filters[c] })),
               ]}
-            />
+            />}
           </Reveal>
           {!data && error ? (
             <div className="empty">
@@ -108,7 +114,7 @@ export default function Home() {
           ) : !data ? (
             <ProjectGridSkeleton />
           ) : (
-            <div className="mosaic">
+            <div className="mosaic" style={{ "--n": featured.length } as CSSProperties}>
               {featured.map((p) => (
                 <ProjectTile key={p.id} p={p} />
               ))}
@@ -120,6 +126,7 @@ export default function Home() {
         </div>
       </section>
 
+      <Divisions />
       <HowWeWork />
       <ClientWall />
     </>

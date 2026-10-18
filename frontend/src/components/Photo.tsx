@@ -25,11 +25,14 @@ export function Photo({ img, alt = "", ratio = "4/3", radius = 0, dark, priority
     if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
   }, [img?.src]);
 
+  // No photo uploaded yet: render nothing (no grey boxes on a live site).
+  if (!img) return null;
+
   const style = { aspectRatio: ratio.replace("/", " / "), borderRadius: radius, "--r": `${radius}px`, backgroundColor: img?.color } as CSSProperties;
 
   return (
     <div className={`photo${dark ? " photo--dark" : ""} ${className}`} style={style}>
-      {img ? (
+      {(
         <img
           ref={ref}
           src={img.src}
@@ -46,8 +49,6 @@ export function Photo({ img, alt = "", ratio = "4/3", radius = 0, dark, priority
           onLoad={() => setLoaded(true)}
           onError={() => setLoaded(true)}
         />
-      ) : (
-        <div className="photo__empty" aria-hidden="true" />
       )}
     </div>
   );
@@ -60,6 +61,6 @@ export function SitePhoto({ slot, alt, hideIfEmpty, ...rest }: Omit<PhotoProps, 
   const s = data?.site_images[slot];
   const text = s ? (lang === "ar" && s.alt_ar ? s.alt_ar : s.alt_en) || alt : alt;
   // Big covers/heroes disappear until a real photo is uploaded, rather than showing an empty box.
-  if (hideIfEmpty && data && !s) return null;
+  if (!s) return null;
   return <Photo img={s?.image} alt={text} {...rest} />;
 }

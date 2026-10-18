@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
 import { WorkHero } from "../components/WorkHero";
@@ -68,7 +69,7 @@ export default function Projects() {
               <button className="btn btn--outline" onClick={() => setParams({}, { replace: true })}>{t.projects.clear}</button>
             </div>
           ) : (
-            <div className="mosaic">
+            <div className="mosaic" style={{ "--n": list.length } as CSSProperties}>
               {list.map((p) => (
                 <ProjectTile key={p.id} p={p} />
               ))}

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ProjectTile } from "../components/Cards";
 import { SitePhoto } from "../components/Photo";
@@ -75,7 +76,7 @@ export default function ServiceDetail() {
               </div>
               <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
             </Reveal>
-            <div className="mosaic">
+            <div className="mosaic" style={{ "--n": related.length } as CSSProperties}>
               {related.map((p) => (
                 <ProjectTile key={p.id} p={p} />
               ))}

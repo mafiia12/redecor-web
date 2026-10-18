@@ -1,12 +1,12 @@
+import { Divisions } from "../components/Divisions";
 import { OfficeCard } from "../components/OfficeCard";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
-import { SHOW_TEAM, TEAM } from "../content";
 import { useData, useLang, usePageMeta } from "../lib/context";
 
 export default function About() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { data } = useData();
   usePageMeta(`${t.about.title} | ${t.brand}`, t.about.sub);
   return (
@@ -56,24 +56,8 @@ export default function About() {
           </Reveal>
         </div>
       </section>
+      <Divisions />
       <HowWeWork />
-      {SHOW_TEAM && (
-        <section className="section section--surface">
-          <div className="container">
-            <Reveal className="section-head">
-              <h2 className="h2">{t.about.team}</h2>
-            </Reveal>
-            <ul className="team">
-              {TEAM.map((m) => (
-                <li key={m.name.en}>
-                  <strong>{m.name[lang]}</strong>
-                  <span>{m.title[lang]}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
       <section className="section">
         <div className="container">
           <Reveal className="section-head">

@@ -71,6 +71,8 @@ class ProjectDetailOut(ProjectCardOut):
     tagline_ar: str
     story_en: str
     story_ar: str
+    details_en: str
+    details_ar: str
     client_name: str
     logo: ImageOut | None
     area_m2: float | None
@@ -174,6 +176,8 @@ class ProjectIn(BaseModel):
     tagline_ar: str = Field(default="", max_length=300)
     story_en: str = Field(default="", max_length=20000)
     story_ar: str = Field(default="", max_length=20000)
+    details_en: str = Field(default="", max_length=4000)
+    details_ar: str = Field(default="", max_length=4000)
     client_name: str = Field(default="", max_length=200)
     city_en: str = Field(default="", max_length=100)
     city_ar: str = Field(default="", max_length=100)

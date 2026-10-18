@@ -56,6 +56,8 @@ def detail_out(p: Project, related: list[Project]) -> ProjectDetailOut:
         tagline_ar=p.tagline_ar,
         story_en=p.story_en,
         story_ar=p.story_ar,
+        details_en=p.details_en,
+        details_ar=p.details_ar,
         client_name=p.client_name,
         logo=image_out(p.logo),
         area_m2=p.area_m2,
