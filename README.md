@@ -3,6 +3,12 @@
 React + TypeScript (Vite) frontend, FastAPI + SQLAlchemy backend. SQLite by default, PostgreSQL-ready via `DATABASE_URL`.
 Implements the v1 design (Home, Projects, Case study, Services, Contact, About) in English and Arabic (RTL), plus a staff admin at `/admin`.
 
+## Documentation
+- **Project baseline and current state:** [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md)
+- **Audit, implementation, security, QA:** [DEVELOPMENT_AUDIT](docs/DEVELOPMENT_AUDIT.md), [IMPLEMENTATION_REPORT](docs/IMPLEMENTATION_REPORT.md), [SECURITY_REVIEW](docs/SECURITY_REVIEW.md), [QA_TEST_REPORT](docs/QA_TEST_REPORT.md)
+- **Operations:** [DEPLOYMENT_GUIDE](docs/DEPLOYMENT_GUIDE.md), [BACKUP_AND_RECOVERY](docs/BACKUP_AND_RECOVERY.md)
+- **Launch:** [LAUNCH_READINESS](docs/LAUNCH_READINESS.md), [DEFERRED_CONTENT](docs/DEFERRED_CONTENT.md)
+
 ## Run (development)
 ```bash
 # backend
@@ -14,11 +20,12 @@ uvicorn app.main:app --reload --port 8000
 # frontend (second terminal)
 cd frontend && npm install && npm run dev     # http://localhost:5173 (proxies /api and /media)
 ```
-Tests: `cd backend && pytest`. Type-check/build: `cd frontend && npm run build`.
+Tests: `cd backend && pytest && ruff check .` · `cd frontend && npm run build && npx playwright test` (see docs/QA_TEST_REPORT.md).
 
 ## Production (single deployable)
-`cd frontend && npm run build`, then run uvicorn from `backend/`. FastAPI serves `frontend/dist`, the API and `/media`.
-Set `SITE_URL`, `SECRET_KEY`, `DATABASE_URL`, `SEED_DEMO=0`, and put it behind HTTPS.
+Docker: `cp .env.example .env` (fill it in) then `docker compose up -d --build`. This runs Caddy (HTTPS), the site and a daily verified backup.
+Full steps, SMTP and rollback: [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md). With `APP_ENV=production` the app refuses unsafe settings.
+A new frontend build is served without restarting the backend.
 
 ## Adding project and client photos (next phase)
 Sign in at `/admin` (footer "Staff Login"):

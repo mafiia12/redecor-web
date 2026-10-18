@@ -1,5 +1,10 @@
 # RE DECOR & MORE: website and admin application, full project report
 
+> **Update 2026-10-18: hardening and launch-readiness programme completed.** Sections 1–8 below are the original
+> baseline, kept for history. The verified current state is in **§11**. Details are in `IMPLEMENTATION_REPORT.md`,
+> `SECURITY_REVIEW.md`, `QA_TEST_REPORT.md`, `DEPLOYMENT_GUIDE.md`, `BACKUP_AND_RECOVERY.md`, `LAUNCH_READINESS.md` and
+> `DEFERRED_CONTENT.md`.
+
 > **Prompt to paste into ChatGPT together with this file**
 >
 > أنت مستشار تقني وخبير UX لمواقع شركات التصميم الداخلي والمقاولات. اقرأ التقرير المرفق عن موقع شركة RE DECOR & MORE (الكود الحالي، القرارات اللي اتاخدت، والنواقص). عايز منك:
@@ -238,3 +243,54 @@ pip install -r tools/requirements.txt
 python tools/seed_test_projects.py --api http://localhost:8001 --email <admin email>
 ```
 Open http://localhost:8001 for the site and http://localhost:8001/admin for the admin.
+
+
+## 11. Verified state after the hardening programme (2026-10-18)
+- **Content integrity:** one server-side public filter. Drafts, `test-project-*`, `[placeholder]` titles, unapproved or logo-less clients and unapproved testimonials never reach the public site, API or sitemap. Placeholder office values are blanked; the Qatar office is hidden until it has its own address. The unverified "3 regional bases" stat is hidden. Arabic fallbacks are marked `lang="en" dir="ltr"`.
+- **Without photos:** typographic project tiles, text-only project pages, and graceful empty states. Images are **deferred by the owner**; the whole media workflow is unchanged and ready.
+- **Enquiries:**
+  - stored first
+  - deduplicated, with a bot timing check
+  - e-mail notification via SMTP from the environment, with delivery status, automatic retries and a manual retry
+  - tested against a real local SMTP server
+  - company credentials pending
+- **WhatsApp:** one row per distinct number, a prefilled message carrying the project or service context, and click tracking.
+- **Security:**
+  - production configuration guard
+  - revocable JWT (`iat`/`ver`)
+  - password policy and change
+  - per-IP and per-account login limits
+  - roles admin/editor/viewer enforced on all 43 admin endpoints
+  - CSP, HSTS and COOP; body size limits
+  - docs off in production
+  - non-root container, proxy-safe port binding
+  - dependency audits clean
+- **SEO:** server-rendered `<head>` per URL (title, description, canonical, hreflang, OG, JSON-LD) and real 404 status. `index.html` is re-read after each build, so no restart is needed.
+- **Visitor journey:** lightbox (keyboard, swipe, zoom), previous/next project, project/service-aware consultation CTA.
+- **Analytics:** first-party, cookie-free counters with an admin dashboard (event spec in IMPLEMENTATION_REPORT.md).
+- **Operations:**
+  - Docker + Caddy (HTTPS) + daily verified backup service with retention and off-server copy
+  - restore tool
+  - pre-migration database copies
+  - deep health endpoint (GET/HEAD)
+  - optional alert webhook
+  - log rotation
+- **Admin:**
+  - users and roles
+  - my account (password)
+  - status and analytics, test e-mail
+  - documents (company profile PDF)
+  - testimonials (approval-gated)
+  - draft preview
+  - completeness indicator, search/filter, reorder
+  - typed delete confirmation
+  - enquiry e-mail status and retry
+- **Quality:** 34 backend tests, 49 Playwright tests (desktop, tablet, mobile; EN/AR; accessibility; performance budgets), ruff clean, `tsc` clean, CI workflow added (not yet run on GitHub).
+- **Launch gate:** **CONDITIONAL GO**. These remain owner actions:
+  - server and `.env` secrets
+  - SMTP credentials
+  - off-server backup destination and a restore test
+  - client-logo permission and Divisions wording approval
+  - removing the TEST projects
+  - publishing real projects
+  - DNS
