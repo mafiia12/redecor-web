@@ -330,3 +330,42 @@ def test_ready_health(client):
 def test_head_requests_for_uptime_monitors(client):
     assert client.head("/api/health").status_code == 200
     assert client.head("/api/health/ready").status_code == 200
+
+
+def test_real_smtp_round_trip(client, monkeypatch):
+    """Talks to a real (local) SMTP server: the message must actually be accepted before 'sent' is recorded."""
+    aiosmtpd = pytest.importorskip("aiosmtpd.controller")
+    received = []
+
+    class Handler:
+        async def handle_DATA(self, server, session, envelope):  # noqa: N802
+            received.append(envelope)
+            return "250 OK"
+
+    import socket
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    ctl = aiosmtpd.Controller(Handler(), hostname="127.0.0.1", port=port)
+    ctl.start()
+    try:
+        monkeypatch.setattr(settings, "smtp_host", "127.0.0.1")
+        monkeypatch.setattr(settings, "smtp_port", port)
+        monkeypatch.setattr(settings, "smtp_security", "none")
+        monkeypatch.setattr(settings, "smtp_user", "")
+        monkeypatch.setattr(settings, "mail_from", "web@example.com")
+        monkeypatch.setattr(settings, "notify_to", ["sales@example.com"])
+        client.post("/api/enquiries", json=GOOD | {"name": "Real Smtp", "elapsed_ms": 4000})
+        assert len(received) == 1 and received[0].rcpt_tos == ["sales@example.com"]
+        assert b"Real Smtp" in received[0].content
+        with SessionLocal() as db:
+            assert db.query(Enquiry).filter_by(name="Real Smtp").one().notify_status == "sent"
+    finally:
+        ctl.stop()
+
+    # server gone: the enquiry is still saved and marked failed for retry
+    client.post("/api/enquiries", json=GOOD | {"name": "Smtp Down", "elapsed_ms": 4000})
+    with SessionLocal() as db:
+        e = db.query(Enquiry).filter_by(name="Smtp Down").one()
+        assert e.notify_status == "failed" and e.notify_error
