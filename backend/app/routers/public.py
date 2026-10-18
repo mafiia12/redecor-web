@@ -53,7 +53,7 @@ def _etag_json(request: Request, payload: dict) -> Response:
     return Response(body, media_type="application/json", headers=headers)
 
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"ok": True}
 

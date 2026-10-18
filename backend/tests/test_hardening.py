@@ -221,11 +221,11 @@ def test_body_limit_and_security_headers(client):
 
 def test_production_guard(monkeypatch):
     monkeypatch.setattr(settings, "app_env", "production")
-    monkeypatch.setattr(settings, "secret_key", "short")
+    monkeypatch.setenv("SECRET_KEY", "")  # unset: the random development fallback must not count
     monkeypatch.setattr(settings, "site_url", "http://x")
     with pytest.raises(RuntimeError, match="SECRET_KEY"):
         app_main.check_production()
-    monkeypatch.setattr(settings, "secret_key", "k" * 48)
+    monkeypatch.setenv("SECRET_KEY", "k" * 48)
     monkeypatch.setattr(settings, "site_url", "https://redecorgroup.com")
     monkeypatch.setattr(settings, "seed_demo", False)
     monkeypatch.setattr(settings, "admin_password", "correct-horse-battery")
@@ -325,3 +325,8 @@ def test_draft_preview_and_reorder(client, auth):
 def test_ready_health(client):
     r = client.get("/api/health/ready")
     assert r.status_code == 200 and r.json()["database"] == "ok" and r.json()["uploads"] == "ok"
+
+
+def test_head_requests_for_uptime_monitors(client):
+    assert client.head("/api/health").status_code == 200
+    assert client.head("/api/health/ready").status_code == 200

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -36,7 +37,8 @@ def check_production() -> None:
     if not settings.is_production:
         return
     problems = []
-    if len(settings.secret_key) < 32 or "change-me" in settings.secret_key:
+    configured_key = os.getenv("SECRET_KEY", "")  # not the random fallback generated for development
+    if len(configured_key) < 32 or "change-me" in configured_key:
         problems.append("SECRET_KEY must be a random string of at least 32 characters")
     if settings.seed_demo:
         problems.append("SEED_DEMO must be 0")
@@ -200,7 +202,7 @@ def sitemap():
     return Response(xml, media_type="application/xml")
 
 
-@app.get("/api/health/ready", include_in_schema=False)
+@app.api_route("/api/health/ready", methods=["GET", "HEAD"], include_in_schema=False)
 def ready():
     """Deep check for uptime monitors: database, upload storage, notification backlog, backup age."""
     checks: dict[str, object] = {}
@@ -254,7 +256,7 @@ def index_template() -> str | None:
     return str(_template["html"])
 
 
-@app.get("/{path:path}", include_in_schema=False)
+@app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 def spa(path: str):
     if path.startswith(("api/", "media/", "assets/")):
         raise HTTPException(404)
