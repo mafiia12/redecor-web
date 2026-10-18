@@ -158,6 +158,8 @@ def main():
     ap.add_argument("--password", default=os.getenv("ADMIN_PASSWORD"))
     ap.add_argument("--only", help="comma-separated slugs")
     ap.add_argument("--max-images", type=int, default=16)
+    ap.add_argument("--min-side", type=int, default=700, help="ignore pictures smaller than this (px); lower it (e.g. 450) to catch more")
+    ap.add_argument("--all-images", action="store_true", help="take EVERY large picture on a page, not just the biggest one")
     ap.add_argument("--images-dir", help="folder with one sub-folder per project slug (e.g. portfolio_export/images); used instead of the PDFs when present")
     ap.add_argument("--publish", action="store_true", help="make projects visible (default: hidden)")
     ap.add_argument("--replace-demo", action="store_true", help="delete the [placeholder] demo projects first")
@@ -168,7 +170,12 @@ def main():
     if a.only:
         wanted = set(a.only.split(","))
         projects = [p for p in projects if p["slug"] in wanted]
+    global MIN_SIDE
+    MIN_SIDE = a.min_side
     pdf_dir = Path(a.pdf_dir)
+    if a.all_images:
+        for p_ in projects:
+            p_["all_images"] = True
 
     s = requests.Session()
     existing: dict[str, int] = {}
