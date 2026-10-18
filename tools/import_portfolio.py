@@ -28,8 +28,12 @@ MAX_W = 2400
 
 
 def page_images(doc, page, seen: set[str], all_images: bool = False) -> list[Image.Image]:
-    """Largest embedded picture on the page (or every large picture), else a render of the page."""
-    found = []
+    """Pictures on a page.
+
+    A picture only counts as a photo when it covers a real share of the page. Pages built from many small
+    pieces (tiles / strips of one big render) are rendered as a whole instead of returning fragments."""
+    page_area = page.rect.width * page.rect.height
+    found = []  # (share of page, pixmap)
     for info in page.get_images(full=True):
         xref = info[0]
         try:
@@ -38,16 +42,18 @@ def page_images(doc, page, seen: set[str], all_images: bool = False) -> list[Ima
                 pix = fitz.Pixmap(fitz.csRGB, pix)
             if min(pix.width, pix.height) < MIN_SIDE:
                 continue
-            found.append((pix.width * pix.height, pix))
+            rects = page.get_image_rects(xref)
+            share = max((r.width * r.height for r in rects), default=0) / page_area if page_area else 0
+            found.append((share, pix))
         except Exception:
             continue
-    found.sort(key=lambda t: -t[0])
+    photos = sorted((f for f in found if f[0] >= 0.12), key=lambda t: -t[0])
     imgs = []
-    if found:
-        for _, pix in (found if all_images else found[:1]):
+    if photos:
+        for _, pix in (photos if all_images else photos[:1]):
             imgs.append(Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB"))
-    else:
-        zoom = 1800 / page.rect.width
+    else:  # no clear photo (tiles, text page, vector art): render the page itself
+        zoom = 2000 / page.rect.width
         pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
         img = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB")
         if img.getextrema() != ((255, 255),) * 3:  # skip blank pages
@@ -105,7 +111,7 @@ def collect(project: dict, pdf_dir: Path, max_images: int):
         first, last = src["pages"]
         for n in range(first, min(last, len(doc)) + 1):
             for k, img in enumerate(page_images(doc, doc[n - 1], seen, project.get("all_images", False))):
-                out.append((f"{n}{'abcdefgh'[k] if k else ''}", img, bool(src.get("render")), ""))
+                out.append((f"{n}" if k == 0 else f"{n}-{k + 1}", img, bool(src.get("render")), ""))
     if len(out) > max_images:  # keep an even spread through the project
         step = len(out) / max_images
         out = [out[int(i * step)] for i in range(max_images)]
