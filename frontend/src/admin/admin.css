@@ -57,4 +57,4 @@
 .adm-preview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 16px; }
 .adm .btn--outline { background: transparent; color: var(--ink); border: 1px solid var(--line); }
 .adm .btn:disabled { opacity: .45; cursor: not-allowed; }
-.adm-preview { --bg: #0a0a0b; --surface: #141415; --ink: #f5f5f7; --muted: #a1a1a6; --line: #2b2b2e; --header-line: rgba(255,255,255,.12); background: #0a0a0b; color: #f5f5f7; }
+.adm-preview { --accent: #ffffff; --accent-hover: #e3e3e6; --on-accent: #0a0a0b; --bg: #0a0a0b; --surface: #141415; --ink: #f5f5f7; --muted: #a1a1a6; --line: #2b2b2e; --header-line: rgba(255,255,255,.12); background: #0a0a0b; color: #f5f5f7; }
