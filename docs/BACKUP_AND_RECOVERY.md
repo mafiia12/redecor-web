@@ -5,6 +5,7 @@
 |---|---|---|
 | Database: projects, clients, offices, enquiries, users, analytics counters | `redecor.db` (SQLite) or PostgreSQL | yes |
 | Uploaded photos (all WebP sizes), logos, company profile PDF | `uploads/` | yes |
+| Enquiry attachments and approval evidence files (private, never served publicly) | `attachments/` (Docker volume `redecor-attachments`, mounted at `/attachments`) | yes (`--attachments`, stored under `attachments/` in the zip) |
 | Code | GitHub repository | not needed (re-clone) |
 | Secrets (`.env`) | server only | **no**: keep a copy in the company password manager |
 
@@ -19,6 +20,9 @@ Each run does five things:
 On failure the exit code is non-zero, a `FAILED` line goes to the log, and an alert is sent if `ALERT_WEBHOOK_URL` is set.
 
 Before every automatic schema change, the backend also saves `redecor.db.pre-migrate-<date>.bak` next to the database.
+Schema changes are versioned migrations (`backend/app/migrations.py`, table `schema_migrations`). Run them by hand with
+`python tools/migrate.py status | up | down` — `up`/`down` first take a full verified `tools/backup.py` archive and stop if it fails.
+The bulk photo upload and the project import also back up the database automatically before writing.
 
 ## 3. Schedule
 - **Docker:** the `backup` service in `docker-compose.yml` runs once a day (`--loop-hours 24`) into `/data/backups`. `docker compose logs backup` shows the result of each run.
@@ -41,12 +45,12 @@ Stop the site first.
 ```bash
 # Docker
 docker compose stop web
-docker compose run --rm --entrypoint python web /app/tools/restore.py /data/backups/redecor-backup-YYYYmmdd-HHMMSS.zip --db /data/redecor.db --uploads /data/uploads
+docker compose run --rm --entrypoint python web /app/tools/restore.py /data/backups/redecor-backup-YYYYmmdd-HHMMSS.zip --db /data/redecor.db --uploads /data/uploads --attachments /attachments
 docker compose start web
 ```
 ```powershell
 # Windows, local
-python tools\restore.py D:\Backups\redecor\redecor-backup-YYYYmmdd-HHMMSS.zip --db backend\redecor.db --uploads backend\uploads
+python tools\restore.py D:\Backups\redecor\redecor-backup-YYYYmmdd-HHMMSS.zip --db backend\redecor.db --uploads backend\uploads --attachments backend\attachments
 ```
 `restore.py` verifies the zip before touching anything. It then **moves** the current database and uploads aside (`…before-restore-<time>`) instead of deleting them, so a wrong restore can be undone.
 

@@ -203,15 +203,24 @@ def approval_evidence(aid: int, db: Session = Depends(get_db), user: User = Depe
 
 
 def gate_report(db: Session) -> dict:
-    """Published items that the approvals gate hides because no current approval is on record."""
-    projects = db.scalars(select(Project).where(Project.published.is_(True)).order_by(Project.sort_order, Project.id)).all()
-    clients = db.scalars(select(Client).where(Client.published.is_(True)).order_by(Client.sort_order, Client.id)).all()
+    """What batch 2 hides from the public site: items that pass every other public rule (published, no
+    placeholder, not a test item, logo present) but have no current approval; plus photos of those projects
+    that have no Render/Executed label (hidden individually)."""
+    from ..visibility import public_clients, public_projects
+
+    projects = db.scalars(select(Project).where(public_projects(gate=False)).options(selectinload(Project.images))
+                          .order_by(Project.sort_order, Project.id)).unique().all()
+    clients = db.scalars(select(Client).where(public_clients(gate=False)).order_by(Client.sort_order, Client.id)).all()
     hidden_p = [{"id": p.id, "slug": p.slug, "title": p.title_en, "status": current_status(db, "project", p.id)}
                 for p in projects if current_status(db, "project", p.id) != "approved"]
     hidden_c = [{"id": c.id, "name": c.name, "status": current_status(db, "client", c.id)}
                 for c in clients if current_status(db, "client", c.id) != "approved"]
+    unlabelled = [{"slug": p.slug, "photos_without_label": n} for p in projects
+                  if (n := sum(i.kind not in ("render", "executed") for i in p.images))]
     return {"enforced": settings.enforce_approvals, "projects_hidden": hidden_p, "clients_hidden": hidden_c,
-            "counts": {"projects": len(hidden_p), "clients": len(hidden_c)}}
+            "photos_hidden": unlabelled,
+            "counts": {"projects": len(hidden_p), "clients": len(hidden_c),
+                       "photos": sum(x["photos_without_label"] for x in unlabelled)}}
 
 
 @router.get("/approvals/gate-report")

@@ -32,21 +32,21 @@ def approved_clause(subject_type: str, id_column):
     )
 
 
-def public_projects():
+def public_projects(gate: bool | None = None):
     """SQL filter: published, no "[placeholder]" title, TEST data hidden unless ALLOW_TEST_CONTENT=1, and
-    (ENFORCE_APPROVALS=1) a current approval to publish on record."""
+    (ENFORCE_APPROVALS=1) a current approval to publish on record. gate=False: everything but the approval."""
     clauses = [Project.published.is_(True), not_(Project.title_en.contains("["))]
     if not settings.allow_test_content:
         clauses.append(not_(Project.slug.startswith(TEST_SLUG_PREFIX)))
-    if settings.enforce_approvals:
+    if settings.enforce_approvals if gate is None else gate:
         clauses.append(approved_clause("project", Project.id))
     return and_(*clauses)
 
 
-def public_clients():
+def public_clients(gate: bool | None = None):
     """A client appears only when published, with a real name, an uploaded logo and (gate on) logo permission."""
     clauses = [Client.published.is_(True), Client.logo_image_id.is_not(None), not_(Client.name.contains("["))]
-    if settings.enforce_approvals:
+    if settings.enforce_approvals if gate is None else gate:
         clauses.append(approved_clause("client", Client.id))
     return and_(*clauses)
 

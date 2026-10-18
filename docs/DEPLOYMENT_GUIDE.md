@@ -71,6 +71,19 @@ Firewall: allow only 22 (SSH), 80 and 443. Port 8000 is bound to 127.0.0.1 and i
 | `ALERT_WEBHOOK_URL` | Optional `https://` Slack/Teams/Discord webhook for alerts |
 | `BACKUP_KEEP`, `BACKUP_COPY_TO` | Backup retention and an optional second location (see BACKUP_AND_RECOVERY.md) |
 
+| `ENFORCE_APPROVALS` | `1` (default; `0` is refused in production). Projects and client logos are public only with an approval on record (docs/CONTENT_GUIDE.md §5). |
+| `PRIMARY_DOMAIN` | `redecorgroup.com`. Any other `SITE_DOMAIN` (staging) is served with `X-Robots-Tag: noindex`. |
+| `HEALTH_TOKEN` | Optional. `/api/health/ready` returns only `{"ok": …}` (200/503) publicly; details need this token (header `X-Health-Token`) or an admin login. |
+| `REDIRECTS_FILE` | Optional JSON `{"/old-path": "/new/path"}` of 301 redirects for old-site links. Default: `deploy/redirects.json` (empty). |
+| `ATTACH_MAX_FILES`, `ATTACH_MAX_FILE_MB`, `ATTACH_MAX_TOTAL_MB` | Quote-form attachments: 3 / 15 / 30 by default. Caddy also caps enquiry requests at 32 MB. |
+| `VIRUS_SCAN_ENABLED`, `CLAMAV_HOST`, `CLAMAV_PORT` | `1` + `docker compose --profile virus-scan up -d` to scan attachments with ClamAV (needs ~1–1.5 GB RAM, see SECURITY_REVIEW.md). |
+| `DIGEST_TIME`, `DIGEST_TZ` | Daily enquiries digest to `NOTIFY_TO`, e.g. `08:30` / `Africa/Cairo`. Empty time = off. |
+| `IMAGE_MIN_LONG_EDGE`, `IMAGE_MIN_COVER_LONG_EDGE`, `IMAGE_ASPECT_MIN`, `IMAGE_ASPECT_MAX` | Photo quality rules (defaults 1600 / 2400 / 0.5 / 2.4). |
+
+Check the file before every start: `python tools/check_env.py .env` (exit code 1 lists every problem; it also refuses a world-readable file: `chmod 600 .env`).
+
+`ADMIN_PASSWORD` is needed only on the very first start (no admin yet). Afterwards it can be removed from `.env`; the app starts without it.
+
 Never commit `.env`. Never paste secrets into chats, tickets or documents.
 
 ## 4. Enquiry e-mail (SMTP)
@@ -97,6 +110,23 @@ Failed e-mails are retried automatically every 10 minutes, up to 5 attempts.
   - notifications that failed after all retries
   - failed backups
 - **Logs:** `docker compose logs -f web`. Logs rotate automatically (5 × 10 MB per service).
+
+## 5b. Staging (new.redecorgroup.com) — files only, nothing is deployed by this repository
+
+Staging runs the same image with **its own volumes** (data, attachments, certificates, ClamAV database), so it can never read or overwrite production data.
+
+```bash
+cp .env.staging.example .env.staging && chmod 600 .env.staging && nano .env.staging   # different secrets from production
+python tools/check_env.py .env.staging
+docker compose -p redecor-staging -f docker-compose.yml -f docker-compose.staging.yml --env-file .env.staging up -d --build
+docker volume ls | grep staging        # redecor-staging-data, redecor-staging-attachments, caddy-staging-*
+python tools/smoke_test.py --base-url https://new.redecorgroup.com   # read-only checks, exit code 0 = pass
+```
+
+* Staging answers with `X-Robots-Tag: noindex, nofollow` on every response (because `SITE_DOMAIN` is not `PRIMARY_DOMAIN`).
+* On the **same server** as production, do not start the staging `caddy` service (ports 80/443 are taken): start `web backup` only and add `new.redecorgroup.com { reverse_proxy 127.0.0.1:8001 }` to the production Caddyfile.
+* The DNS record for `new.` is created only when the owner decides; this repository never touches DNS.
+* `www.` → apex redirect: `deploy/Caddyfile` redirects `www.{$SITE_DOMAIN}` to `{$SITE_DOMAIN}` (301), so it follows the env value on both sites.
 
 ## 6. Updating the site
 ```bash

@@ -19,6 +19,11 @@ _load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _env(name: str, default: str) -> str:
+    """Like os.getenv, but an empty value (KEY= in .env) also means "use the default"."""
+    return os.getenv(name, "").strip() or default
+
+
 def _flag(name: str, default: str = "0") -> bool:
     return os.getenv(name, default).strip().lower() in ("1", "true", "yes", "on")
 
@@ -73,30 +78,30 @@ class Settings:
     # ---- Batch 2 ----
     # Public hostname of this instance and the real production domain: any other host (staging, "new.")
     # gets X-Robots-Tag: noindex so it can never be indexed.
-    site_domain: str = os.getenv("SITE_DOMAIN", "").strip().lower()
-    primary_domain: str = os.getenv("PRIMARY_DOMAIN", "redecorgroup.com").strip().lower()
+    site_domain: str = _env("SITE_DOMAIN", "").strip().lower()
+    primary_domain: str = _env("PRIMARY_DOMAIN", "redecorgroup.com").strip().lower()
     # Optional token that unlocks the detailed /api/health/ready output for monitors (header X-Health-Token).
     health_token: str = os.getenv("HEALTH_TOKEN", "").strip()
     # JSON file {"/old-path": "/new-path"} with permanent redirects for old-site URLs (empty by default).
-    redirects_file: str = os.getenv("REDIRECTS_FILE", str(BASE_DIR.parent / "deploy" / "redirects.json"))
+    redirects_file: str = _env("REDIRECTS_FILE", str(BASE_DIR.parent / "deploy" / "redirects.json"))
     # Publishing gate: projects and client logos need a recorded approval. 0 is refused in production.
     enforce_approvals: bool = _flag("ENFORCE_APPROVALS", "1")
     # Image quality thresholds for project photos (long edge in px; aspect = width / height).
-    image_min_long_edge: int = int(os.getenv("IMAGE_MIN_LONG_EDGE", "1600"))
-    image_min_cover_long_edge: int = int(os.getenv("IMAGE_MIN_COVER_LONG_EDGE", "2400"))
-    image_aspect_min: float = float(os.getenv("IMAGE_ASPECT_MIN", "0.5"))
-    image_aspect_max: float = float(os.getenv("IMAGE_ASPECT_MAX", "2.4"))
+    image_min_long_edge: int = int(_env("IMAGE_MIN_LONG_EDGE", "1600"))
+    image_min_cover_long_edge: int = int(_env("IMAGE_MIN_COVER_LONG_EDGE", "2400"))
+    image_aspect_min: float = float(_env("IMAGE_ASPECT_MIN", "0.5"))
+    image_aspect_max: float = float(_env("IMAGE_ASPECT_MAX", "2.4"))
     # Enquiry attachments: stored OUTSIDE the public uploads folder, never served statically.
-    attachments_dir: Path = Path(os.getenv("ATTACHMENTS_DIR", str(BASE_DIR / "attachments"))).resolve()
-    attach_max_file_mb: int = int(os.getenv("ATTACH_MAX_FILE_MB", "15"))
-    attach_max_files: int = int(os.getenv("ATTACH_MAX_FILES", "3"))
-    attach_max_total_mb: int = int(os.getenv("ATTACH_MAX_TOTAL_MB", "30"))
+    attachments_dir: Path = Path(_env("ATTACHMENTS_DIR", str(BASE_DIR / "attachments"))).resolve()
+    attach_max_file_mb: int = int(_env("ATTACH_MAX_FILE_MB", "15"))
+    attach_max_files: int = int(_env("ATTACH_MAX_FILES", "3"))
+    attach_max_total_mb: int = int(_env("ATTACH_MAX_TOTAL_MB", "30"))
     virus_scan_enabled: bool = _flag("VIRUS_SCAN_ENABLED", "0")
-    clamav_host: str = os.getenv("CLAMAV_HOST", "clamav").strip()
-    clamav_port: int = int(os.getenv("CLAMAV_PORT", "3310"))
+    clamav_host: str = _env("CLAMAV_HOST", "clamav").strip()
+    clamav_port: int = int(_env("CLAMAV_PORT", "3310"))
     # Daily digest of new / overdue enquiries ("HH:MM", empty = off) in this time zone.
     digest_time: str = os.getenv("DIGEST_TIME", "").strip()
-    digest_tz: str = os.getenv("DIGEST_TZ", "Africa/Cairo").strip()
+    digest_tz: str = _env("DIGEST_TZ", "Africa/Cairo").strip()
 
     @property
     def is_primary_host(self) -> bool:

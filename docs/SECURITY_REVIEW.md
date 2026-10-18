@@ -36,3 +36,33 @@ This is a practical review for a small company website. It is not a penetration 
 - **Admin paths:** `/admin` is linked from the footer ("Staff login"). That is acceptable with the controls above, and it can be removed from the footer if preferred.
 - **Server hardening:** this is the hosting company's responsibility. Use SSH keys (no password login), automatic security updates, and a firewall allowing only 22/80/443.
 - **Logo permission:** logos are a legal and permission matter, not a technical one. New and imported client logos start unpublished. The 16 logos already imported locally are published in the owner's database: confirm permission (especially Fertiglobe/ADNOC) before launch.
+
+## Batch 2 additions
+
+| # | Area | What was added | Evidence |
+|---|---|---|---|
+| 21 | Quote attachments | Type decided from the **bytes**, not the extension: PDF, DWG, DXF, XLSX, XLS, DOCX, JPG, PNG, ZIP only. Refused: macro-enabled Office files (`vbaProject.bin`, `macroEnabled` content types, `.xlsm/.docm…`, VBA in old `.xls`), executables and scripts inside ZIPs, nested archives, absolute or `../` paths, more than 500 entries, more than 300 MB uncompressed, compression ratio above 100 (zip bomb). ZIPs are inspected from the central directory only, never extracted. | `tests/test_batch2_attachments.py` (allowed and dangerous file matrices) |
+| 22 | Attachment limits | 3 files, 15 MB each, 30 MB total (env-configurable). Enforced three times: Caddy `request_body max_size 32MB` for `/api/enquiries*`, the app's Content-Length / streaming body ceiling, and per-file/total checks while reading (each upload is spooled to disk, read at most to the limit). Files are checked **before** anything is stored. | `test_limits_count_size_total_and_body`, `test_bad_file_is_refused_and_nothing_is_stored` |
+| 23 | Attachment storage | Random 32-hex names in `ATTACHMENTS_DIR` (own Docker volume `redecor-attachments`), outside `UPLOAD_DIR`; the app refuses to start if it is inside it. The original name is kept only as cleaned display metadata. Never served by `/media`. Included in backups. | `test_quote_with_files_is_stored_privately_and_downloadable_by_admin_only`, `test_backup_includes_attachments` |
+| 24 | Attachment download | Admin only; `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, a fixed safe content type per detected kind, `Cache-Control: private, no-store`; every download written to the audit log; files flagged as infected cannot be downloaded. Notification and digest e-mails show only the number of files. | same test, `test_virus_scan_results` |
+| 25 | Virus scanning | Optional ClamAV (`VIRUS_SCAN_ENABLED=1`, compose profile `virus-scan`). The enquiry is stored first; a scanner error only marks the file `error`, never deletes the enquiry. With scanning off every file stays in state `quarantine` and the admin sees "Not scanned: open with care". | `test_virus_scan_results`, `test_scanner_down_never_loses_the_enquiry` |
+| 26 | Enquiries access | Enquiries (personal data) are now **admin-only** (editors no longer see them). Assignment only to admin accounts. CRM history is append-only. | `test_enquiries_are_admin_only`, `test_status_workflow_with_append_only_history` |
+| 27 | Spreadsheet exports | Every exported cell starting with `= + - @`, tab or CR is prefixed with `'` (formula injection), CSV and XLSX. | `test_export_protects_against_formula_injection` |
+| 28 | Approval evidence | Evidence files use the same content checks and private store; download needs an editor login and is audited. | `test_gate_for_client_logos_and_evidence_file` |
+| 29 | Health endpoint | Public `/api/health/ready` returns only `{"ok": true}` (200) or `{"ok": false}` (503); details need `HEALTH_TOKEN` or an admin token. | `test_batch2_deploy.py` |
+
+### ClamAV trade-off
+ClamAV keeps its signature database in memory: plan for **about 1–1.5 GB of extra RAM** (and ~300 MB disk for
+`clamav-db`), plus a few minutes at start while signatures load. On a 1–2 GB VPS that is too much; options:
+1. keep `VIRUS_SCAN_ENABLED=0` (default). Files stay marked *not scanned*, staff open them with care on an updated
+   machine with antivirus, and the content checks above still refuse executables, macros and archive tricks;
+2. move to a 4 GB server and enable the `virus-scan` profile;
+3. scan on the staff PC (Windows Defender scans downloads automatically).
+Recommendation: option 1 at launch, option 2 if attachment volume grows.
+
+### Data retention (enquiries and attachments)
+Enquiries and their files are personal data. Suggested policy (owner to confirm, then it can be automated):
+keep **won** enquiries with the project file as required for contracts/accounting; delete **lost** and **spam**
+enquiries and their attachments after **12 months**, and any enquiry with no reply after 24 months. Deletion is
+not automated in this batch (no rows are ever deleted by the system). Backups keep deleted data until they rotate
+out (`BACKUP_KEEP`, default 14 days).

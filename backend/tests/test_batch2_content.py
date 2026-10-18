@@ -251,3 +251,24 @@ def test_readiness_is_computed_and_exports(client, auth):
     assert [c.value for c in ws[1]][:4] == ["type", "name", "name_ar", "slug"]
     csv_text = client.get("/api/admin/readiness?format=csv", headers=auth).content.decode("utf-8-sig")
     assert "ready-1" in csv_text
+
+
+def test_gate_report_lists_only_what_the_gate_hides(client, auth, gate):
+    make_project(client, auth, "gate-rep", published=True)
+    ph = make_project(client, auth, "gate-rep-ph", title_en="[placeholder] title")
+    with SessionLocal() as db:  # the admin refuses to publish a placeholder; force it to prove it stays excluded
+        db.get(Project, ph["id"]).published = True
+        db.commit()
+    make_project(client, auth, "test-project-gate-rep", published=True)
+    lab = make_project(client, auth, "gate-rep-photos", published=True)
+    approve(client, auth, "project", lab["id"])
+    with SessionLocal() as db:  # one unlabelled photo on an otherwise public project (as left by migration 0002)
+        img = ImageRow(key="gaterepkey", width=1800, height=1200, widths="480", color="#777")
+        db.add(img)
+        db.flush()
+        db.add(ProjectImage(project_id=lab["id"], image_id=img.id, kind=None))
+        db.commit()
+    r = client.get("/api/admin/approvals/gate-report", headers=auth).json()
+    slugs = {x["slug"] for x in r["projects_hidden"]}
+    assert "gate-rep" in slugs and "gate-rep-ph" not in slugs and "test-project-gate-rep" not in slugs
+    assert {"slug": "gate-rep-photos", "photos_without_label": 1} in r["photos_hidden"]

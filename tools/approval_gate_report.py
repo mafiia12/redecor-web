@@ -1,5 +1,7 @@
-"""Dry-run of the approvals gate: which PUBLISHED projects and client logos the public site hides because
-no current approval is on record. Read-only.
+"""Dry-run of the approvals gate: which projects and client logos the public site would show WITHOUT the gate
+but hides WITH it (no current approval on record), and which photos are hidden for having no Render/Executed
+label. Items already hidden for other reasons (draft, [placeholder], test-project-*, no logo) are not listed.
+Read-only.
 
     python tools/approval_gate_report.py            # uses DATABASE_URL / backend/.env
     python tools/approval_gate_report.py --json
@@ -39,6 +41,9 @@ def main() -> int:
     print(f"Client logos hidden: {r['counts']['clients']}")
     for c in r["clients_hidden"]:
         print(f"  - client #{c['id']}  (approval: {c['status']})")
+    print(f"Photos hidden (no Render/Executed label): {r['counts']['photos']}")
+    for x in r["photos_hidden"]:
+        print(f"  - {x['slug']}: {x['photos_without_label']}")
     return 0
 
 
