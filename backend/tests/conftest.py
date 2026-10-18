@@ -9,7 +9,8 @@ os.environ.update(
     FRONTEND_DIST=str(_tmp / "nodist"),
     ADMIN_EMAIL="admin@test.com",
     ADMIN_PASSWORD="correct-horse-battery",
-    SECRET_KEY="test-secret",
+    SECRET_KEY="test-secret-key-that-is-long-enough-123456",
+    NOTIFY_RETRY_SECONDS="0",
     SEED_DEMO="1",
 )
 
@@ -33,6 +34,8 @@ def client():
 def _reset_limiters():
     public.enquiry_limiter.reset()
     admin.login_limiter.reset()
+    admin.account_limiter.reset()
+    public.event_limiter.reset()
 
 
 @pytest.fixture()

@@ -18,9 +18,12 @@ def test_bootstrap_has_seed_data_and_etag(client):
     r = client.get("/api/bootstrap")
     assert r.status_code == 200
     data = r.json()
-    assert len(data["projects"]) == 9
+    # Demo seed content is "[placeholder]" text: it exists for the admin but is never public.
+    assert data["projects"] == []
     assert {o["country"] for o in data["offices"]} == {"eg", "qa"}
-    assert len(data["clients"]) == 12
+    assert data["clients"] == []
+    qa = next(o for o in data["offices"] if o["country"] == "qa")
+    assert qa["address_en"] == "" and qa["hours_en"] == ""  # placeholders are blanked publicly
     r2 = client.get("/api/bootstrap", headers={"If-None-Match": r.headers["etag"]})
     assert r2.status_code == 304
 

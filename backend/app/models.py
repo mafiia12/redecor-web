@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -15,6 +15,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    # admin: everything incl. users and offices · editor: content · viewer: read-only
+    role: Mapped[str] = mapped_column(String(10), default="admin", server_default="admin")
+    # Bumped on password change / revoke: every older session token stops working.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -141,6 +145,13 @@ class Enquiry(Base):
     contact_method: Mapped[str] = mapped_column(String(10), default="whatsapp")
     lang: Mapped[str] = mapped_column(String(2), default="en")
     status: Mapped[str] = mapped_column(String(12), default="new", index=True)  # new | contacted | closed
+    # E-mail notification: pending | sending | sent | failed | not_configured | legacy (rows older than the feature)
+    notify_status: Mapped[str] = mapped_column(String(16), default="pending", server_default="legacy", index=True)
+    notify_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    notify_error: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Hash of the submitted content: the same enquiry sent twice within minutes is stored once.
+    fingerprint: Mapped[str] = mapped_column(String(64), default="", server_default="", index=True)
 
 
 class AuditLog(Base):
@@ -151,3 +162,46 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(40))
     entity: Mapped[str] = mapped_column(String(40))
     entity_id: Mapped[str] = mapped_column(String(80), default="")
+
+
+class AnalyticsDaily(Base):
+    """Privacy-friendly counters: one row per (day, event, path, lang). No cookies, IPs or personal data."""
+
+    __tablename__ = "analytics_daily"
+    __table_args__ = (UniqueConstraint("day", "name", "path", "lang"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    day: Mapped[date] = mapped_column(Date, index=True)
+    name: Mapped[str] = mapped_column(String(40))
+    path: Mapped[str] = mapped_column(String(200), default="")
+    lang: Mapped[str] = mapped_column(String(2), default="")
+    count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Testimonial(Base):
+    """Shown publicly only when published AND the client's written approval is recorded."""
+
+    __tablename__ = "testimonials"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quote_en: Mapped[str] = mapped_column(Text, default="")
+    quote_ar: Mapped[str] = mapped_column(Text, default="")
+    author: Mapped[str] = mapped_column(String(120))
+    role_en: Mapped[str] = mapped_column(String(160), default="")
+    role_ar: Mapped[str] = mapped_column(String(160), default="")
+    company: Mapped[str] = mapped_column(String(160), default="")
+    approval_note: Mapped[str] = mapped_column(String(300), default="")  # e.g. "Approved by e-mail 2026-11-02"
+    approved: Mapped[bool] = mapped_column(Boolean, default=False)
+    published: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SiteDocument(Base):
+    """Downloadable files such as the company profile PDF (slot = "company-profile")."""
+
+    __tablename__ = "site_documents"
+    slot: Mapped[str] = mapped_column(String(40), primary_key=True)
+    key: Mapped[str] = mapped_column(String(32), unique=True)
+    filename: Mapped[str] = mapped_column(String(160))
+    size: Mapped[int] = mapped_column(Integer)
+    published: Mapped[bool] = mapped_column(Boolean, default=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

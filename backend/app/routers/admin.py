@@ -12,21 +12,40 @@ from ..schemas import (
     EnquiryAdminOut,
     EnquiryStatusIn,
     LoginIn,
+    PasswordChangeIn,
     OfficeIn,
     OfficeOut,
+    OrderIn,
     ProjectAdminOut,
+    ProjectDetailOut,
     ProjectImageOut,
     ProjectImagePatch,
     ProjectIn,
     SiteImageAltIn,
     image_out,
 )
-from ..security import RateLimiter, client_ip, create_token, current_user, verify_password
+from ..security import (
+    RateLimiter,
+    admin_only,
+    client_ip,
+    create_token,
+    current_user,
+    editor,
+    hash_password,
+    password_problems,
+    verify_password,
+    viewer,
+)
+from ..config import settings
+from ..notify import deliver
 from ..serializers import cover_of, project_image_out
+from ..visibility import TEST_SLUG_PREFIX, is_placeholder
+from .public import project_payload
 from ..slots import SLOT_KEYS, SLOTS
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
-login_limiter = RateLimiter(limit=8, window_s=300)
+login_limiter = RateLimiter(limit=8, window_s=300)  # per IP
+account_limiter = RateLimiter(limit=10, window_s=900)  # per e-mail, against distributed guessing
 
 # A dummy hash so unknown emails cost the same time as wrong passwords.
 _DUMMY = "scrypt$" + "00" * 16 + "$" + "00" * 32
@@ -53,29 +72,87 @@ def unique_slug(db: Session, base: str, exclude_id: int | None = None) -> str:
 # ---------- auth ----------
 @router.post("/login")
 def login(data: LoginIn, request: Request, db: Session = Depends(get_db)):
+    email = data.email.strip().lower()
     login_limiter.check(client_ip(request))
-    user = db.scalar(select(User).where(User.email == data.email.strip().lower()))
+    account_limiter.check(email)
+    user = db.scalar(select(User).where(User.email == email))
     ok = verify_password(data.password, user.password_hash if user else _DUMMY)
     if not user or not ok:
         raise HTTPException(401, "Incorrect email or password")
-    return {"token": create_token(user.email), "email": user.email}
+    return {"token": create_token(user), "email": user.email, "role": user.role}
 
 
 @router.get("/me")
 def me(user: User = Depends(current_user)):
-    return {"email": user.email}
+    return {"email": user.email, "role": user.role}
+
+
+@router.post("/me/password")
+def change_password(data: PasswordChangeIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Change your own password. All other sessions are signed out; a fresh token is returned."""
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(400, "Current password is incorrect")
+    problems = password_problems(data.new_password, user.email)
+    if problems:
+        raise HTTPException(422, " ".join(problems))
+    user.password_hash = hash_password(data.new_password)
+    user.token_version = (user.token_version or 0) + 1
+    audit(db, user, "password", "user", user.id)
+    db.commit()
+    return {"token": create_token(user), "email": user.email, "role": user.role}
 
 
 # ---------- projects ----------
+# What makes a project page feel complete. Photos are recommended but never required (text-only pages are valid).
+_CHECKS = [
+    ("title_ar", "Arabic title"),
+    ("city_en", "City"),
+    ("summary_en", "Summary (English)"),
+    ("summary_ar", "Summary (Arabic)"),
+    ("year", "Year"),
+    ("scope_en", "Scope"),
+    ("details_en", "Details (facts)"),
+    ("images", "Photos"),
+]
+
+
+def completeness(p: Project) -> tuple[int, list[str]]:
+    missing = [label for f, label in _CHECKS if not (p.images if f == "images" else getattr(p, f))]
+    return round(100 * (len(_CHECKS) - len(missing)) / len(_CHECKS)), missing
+
+
+def _is_public(p: Project) -> bool:
+    return bool(
+        p.published
+        and not is_placeholder(p.title_en)
+        and (settings.allow_test_content or not p.slug.startswith(TEST_SLUG_PREFIX))
+    )
+
+
 def _project_out(p: Project) -> ProjectAdminOut:
     cover = cover_of(p)
+    score, missing = completeness(p)
     return ProjectAdminOut(
         **{f: getattr(p, f) for f in ProjectIn.model_fields},
         id=p.id,
         logo=image_out(p.logo),
         cover=image_out(cover.image) if cover else None,
         images=[project_image_out(i) for i in p.images],
+        completeness=score,
+        missing=missing,
+        is_public=_is_public(p),
     )
+
+
+def _publish_guard(data: ProjectIn) -> None:
+    """A published page may be text-only, but it must not show unfinished "[placeholder]" text."""
+    if not data.published:
+        return
+    fields = ("title_en", "title_ar", "summary_en", "summary_ar", "city_en", "city_ar", "scope_en", "scope_ar",
+              "tagline_en", "tagline_ar", "details_en", "details_ar", "client_name")
+    bad = [f for f in fields if is_placeholder(getattr(data, f))]
+    if bad:
+        raise HTTPException(422, f"Replace the [placeholder] text before publishing ({', '.join(bad)}), or save as draft.")
 
 
 def _get_project(db: Session, pid: int) -> Project:
@@ -86,18 +163,19 @@ def _get_project(db: Session, pid: int) -> Project:
 
 
 @router.get("/projects", response_model=list[ProjectAdminOut])
-def list_projects(db: Session = Depends(get_db), _: User = Depends(current_user)):
+def list_projects(db: Session = Depends(get_db), _: User = Depends(viewer)):
     rows = db.scalars(select(Project).options(selectinload(Project.images)).order_by(Project.sort_order, Project.id))
     return [_project_out(p) for p in rows.unique()]
 
 
 @router.get("/projects/{pid}", response_model=ProjectAdminOut)
-def get_project(pid: int, db: Session = Depends(get_db), _: User = Depends(current_user)):
+def get_project(pid: int, db: Session = Depends(get_db), _: User = Depends(viewer)):
     return _project_out(_get_project(db, pid))
 
 
 @router.post("/projects", response_model=ProjectAdminOut, status_code=201)
-def create_project(data: ProjectIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def create_project(data: ProjectIn, db: Session = Depends(get_db), user: User = Depends(editor)):
+    _publish_guard(data)
     values = data.model_dump()
     values["slug"] = unique_slug(db, slugify(data.slug or data.title_en))
     p = Project(**values)
@@ -109,8 +187,9 @@ def create_project(data: ProjectIn, db: Session = Depends(get_db), user: User = 
 
 
 @router.put("/projects/{pid}", response_model=ProjectAdminOut)
-def update_project(pid: int, data: ProjectIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def update_project(pid: int, data: ProjectIn, db: Session = Depends(get_db), user: User = Depends(editor)):
     p = _get_project(db, pid)
+    _publish_guard(data)
     values = data.model_dump()
     values["slug"] = unique_slug(db, slugify(data.slug or p.slug), exclude_id=p.id)
     for k, v in values.items():
@@ -120,8 +199,26 @@ def update_project(pid: int, data: ProjectIn, db: Session = Depends(get_db), use
     return _project_out(_get_project(db, pid))
 
 
+@router.put("/projects-order", status_code=204)
+def reorder_projects(data: OrderIn, db: Session = Depends(get_db), user: User = Depends(editor)):
+    """Save the display order in one request (the list order becomes sort_order 10, 20, 30...)."""
+    rows = {p.id: p for p in db.scalars(select(Project).where(Project.id.in_(data.ids)))}
+    for n, pid in enumerate(data.ids, start=1):
+        if pid in rows:
+            rows[pid].sort_order = n * 10
+    audit(db, user, "reorder", "project", len(rows))
+    db.commit()
+
+
+@router.get("/projects/{pid}/preview", response_model=ProjectDetailOut)
+def preview_project(pid: int, db: Session = Depends(get_db), _: User = Depends(viewer)):
+    """The project page exactly as the public would see it, including drafts (admin only)."""
+    p = _get_project(db, pid)
+    return project_payload(db, p)
+
+
 @router.delete("/projects/{pid}", status_code=204)
-def delete_project(pid: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def delete_project(pid: int, db: Session = Depends(get_db), user: User = Depends(editor)):
     p = _get_project(db, pid)
     image_ids = [i.image_id for i in p.images]
     db.delete(p)
@@ -137,7 +234,7 @@ def upload_project_images(
     pid: int,
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(editor),
 ):
     if len(files) > 20:
         raise HTTPException(400, "Upload at most 20 images at a time.")
@@ -162,7 +259,7 @@ def upload_project_images(
 
 @router.post("/projects/{pid}/logo", response_model=ProjectAdminOut)
 def upload_project_logo(
-    pid: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(current_user)
+    pid: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(editor)
 ):
     """Client / brand logo shown on a banner at the top of the project page."""
     p = _get_project(db, pid)
@@ -178,7 +275,7 @@ def upload_project_logo(
 
 
 @router.delete("/projects/{pid}/logo", status_code=204)
-def delete_project_logo(pid: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def delete_project_logo(pid: int, db: Session = Depends(get_db), user: User = Depends(editor)):
     p = _get_project(db, pid)
     old, p.logo_image_id = p.logo_image_id, None
     db.flush()
@@ -189,7 +286,7 @@ def delete_project_logo(pid: int, db: Session = Depends(get_db), user: User = De
 
 @router.patch("/project-images/{iid}", response_model=ProjectImageOut)
 def patch_project_image(
-    iid: int, data: ProjectImagePatch, db: Session = Depends(get_db), user: User = Depends(current_user)
+    iid: int, data: ProjectImagePatch, db: Session = Depends(get_db), user: User = Depends(editor)
 ):
     pi = db.get(ProjectImage, iid)
     if not pi:
@@ -206,7 +303,7 @@ def patch_project_image(
 
 
 @router.delete("/project-images/{iid}", status_code=204)
-def delete_project_image(iid: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def delete_project_image(iid: int, db: Session = Depends(get_db), user: User = Depends(editor)):
     pi = db.get(ProjectImage, iid)
     if not pi:
         raise HTTPException(404, "Image not found")
@@ -232,12 +329,12 @@ def _client_out(c: Client) -> ClientAdminOut:
 
 
 @router.get("/clients", response_model=list[ClientAdminOut])
-def list_clients(db: Session = Depends(get_db), _: User = Depends(current_user)):
+def list_clients(db: Session = Depends(get_db), _: User = Depends(viewer)):
     return [_client_out(c) for c in db.scalars(select(Client).order_by(Client.sort_order, Client.id))]
 
 
 @router.post("/clients", response_model=ClientAdminOut, status_code=201)
-def create_client(data: ClientIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def create_client(data: ClientIn, db: Session = Depends(get_db), user: User = Depends(editor)):
     c = Client(**data.model_dump())
     db.add(c)
     db.flush()
@@ -247,7 +344,7 @@ def create_client(data: ClientIn, db: Session = Depends(get_db), user: User = De
 
 
 @router.put("/clients/{cid}", response_model=ClientAdminOut)
-def update_client(cid: int, data: ClientIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def update_client(cid: int, data: ClientIn, db: Session = Depends(get_db), user: User = Depends(editor)):
     c = db.get(Client, cid)
     if not c:
         raise HTTPException(404, "Client not found")
@@ -260,7 +357,7 @@ def update_client(cid: int, data: ClientIn, db: Session = Depends(get_db), user:
 
 @router.post("/clients/{cid}/logo", response_model=ClientAdminOut)
 def upload_client_logo(
-    cid: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(current_user)
+    cid: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(editor)
 ):
     c = db.get(Client, cid)
     if not c:
@@ -277,7 +374,7 @@ def upload_client_logo(
 
 
 @router.delete("/clients/{cid}", status_code=204)
-def delete_client(cid: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def delete_client(cid: int, db: Session = Depends(get_db), user: User = Depends(editor)):
     c = db.get(Client, cid)
     if not c:
         raise HTTPException(404, "Client not found")
@@ -302,13 +399,13 @@ def _slot_out(db: Session, slot: str, label: str) -> dict:
 
 
 @router.get("/site-images")
-def list_site_images(db: Session = Depends(get_db), _: User = Depends(current_user)):
+def list_site_images(db: Session = Depends(get_db), _: User = Depends(viewer)):
     return [_slot_out(db, k, label) for k, label in SLOTS]
 
 
 @router.put("/site-images/{slot}")
 def upload_site_image(
-    slot: str, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(current_user)
+    slot: str, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(editor)
 ):
     if slot not in SLOT_KEYS:
         raise HTTPException(404, "Unknown image slot")
@@ -329,7 +426,7 @@ def upload_site_image(
 
 @router.patch("/site-images/{slot}")
 def update_site_image_alt(
-    slot: str, data: SiteImageAltIn, db: Session = Depends(get_db), user: User = Depends(current_user)
+    slot: str, data: SiteImageAltIn, db: Session = Depends(get_db), user: User = Depends(editor)
 ):
     s = db.get(SiteImage, slot)
     if not s:
@@ -341,7 +438,7 @@ def update_site_image_alt(
 
 
 @router.delete("/site-images/{slot}", status_code=204)
-def delete_site_image(slot: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def delete_site_image(slot: str, db: Session = Depends(get_db), user: User = Depends(editor)):
     s = db.get(SiteImage, slot)
     if not s:
         raise HTTPException(404, "No image in this slot")
@@ -355,12 +452,12 @@ def delete_site_image(slot: str, db: Session = Depends(get_db), user: User = Dep
 
 # ---------- offices ----------
 @router.get("/offices", response_model=list[OfficeOut])
-def list_offices(db: Session = Depends(get_db), _: User = Depends(current_user)):
+def list_offices(db: Session = Depends(get_db), _: User = Depends(viewer)):
     return db.scalars(select(Office).order_by(Office.country)).all()
 
 
 @router.put("/offices/{country}", response_model=OfficeOut)
-def update_office(country: str, data: OfficeIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def update_office(country: str, data: OfficeIn, db: Session = Depends(get_db), user: User = Depends(admin_only)):
     o = db.get(Office, country)
     if not o:
         raise HTTPException(404, "Office not found")
@@ -377,14 +474,14 @@ def _enquiry_out(e: Enquiry) -> EnquiryAdminOut:
 
 
 @router.get("/enquiries", response_model=list[EnquiryAdminOut])
-def list_enquiries(db: Session = Depends(get_db), _: User = Depends(current_user)):
+def list_enquiries(db: Session = Depends(get_db), _: User = Depends(editor)):  # personal data: not for viewers
     rows = db.scalars(select(Enquiry).order_by(Enquiry.created_at.desc()).limit(500))
     return [_enquiry_out(e) for e in rows]
 
 
 @router.patch("/enquiries/{eid}", response_model=EnquiryAdminOut)
 def set_enquiry_status(
-    eid: int, data: EnquiryStatusIn, db: Session = Depends(get_db), user: User = Depends(current_user)
+    eid: int, data: EnquiryStatusIn, db: Session = Depends(get_db), user: User = Depends(editor)
 ):
     e = db.get(Enquiry, eid)
     if not e:
@@ -393,3 +490,22 @@ def set_enquiry_status(
     audit(db, user, f"status:{data.status}", "enquiry", eid)
     db.commit()
     return _enquiry_out(e)
+
+
+@router.post("/enquiries/{eid}/notify", response_model=EnquiryAdminOut)
+def resend_notification(eid: int, db: Session = Depends(get_db), user: User = Depends(editor)):
+    """Retry the e-mail for one enquiry. An already delivered notification is never sent twice."""
+    e = db.get(Enquiry, eid)
+    if not e:
+        raise HTTPException(404, "Enquiry not found")
+    if e.notify_status == "sent":
+        raise HTTPException(409, "This notification was already delivered")
+    if e.notify_status in ("legacy",):
+        e.notify_status = "pending"
+    e.notify_attempts = min(e.notify_attempts, settings.notify_max_attempts - 1)  # allow one manual attempt
+    db.commit()
+    deliver(eid)
+    db.expire_all()
+    audit(db, user, "notify", "enquiry", eid)
+    db.commit()
+    return _enquiry_out(db.get(Enquiry, eid))

@@ -62,13 +62,13 @@ class ProjectCardOut(BaseModel):
     is_render: bool
     featured: bool
     cover: ImageOut | None
+    tagline_en: str = ""
+    tagline_ar: str = ""
 
 
 class ProjectDetailOut(ProjectCardOut):
     summary_en: str
     summary_ar: str
-    tagline_en: str
-    tagline_ar: str
     story_en: str
     story_ar: str
     details_en: str
@@ -80,6 +80,8 @@ class ProjectDetailOut(ProjectCardOut):
     scope_ar: str
     gallery: list[ProjectImageOut]
     related: list[ProjectCardOut]
+    prev: ProjectCardOut | None = None
+    next: ProjectCardOut | None = None
 
 
 class ClientOut(BaseModel):
@@ -109,11 +111,42 @@ class SiteImageOut(BaseModel):
     image: ImageOut
 
 
+class TestimonialOut(BaseModel):
+    id: int
+    quote_en: str
+    quote_ar: str
+    author: str
+    role_en: str
+    role_ar: str
+    company: str
+
+
+class DocumentOut(BaseModel):
+    slot: str
+    url: str
+    filename: str
+    size: int
+
+
 class BootstrapOut(BaseModel):
     offices: list[OfficeOut]
     site_images: dict[str, SiteImageOut]
     clients: list[ClientOut]
     projects: list[ProjectCardOut]
+    testimonials: list[TestimonialOut] = []
+    documents: dict[str, DocumentOut] = {}
+
+
+EventName = Literal[
+    "page_view", "project_view", "service_view", "cta_click", "whatsapp_open", "whatsapp_click",
+    "enquiry_submit", "enquiry_success", "profile_download", "language_switch", "theme_switch",
+]
+
+
+class EventIn(BaseModel):
+    name: EventName
+    path: str = Field(default="", max_length=300)
+    lang: Literal["en", "ar", ""] = ""
 
 
 class EnquiryIn(BaseModel):
@@ -129,6 +162,8 @@ class EnquiryIn(BaseModel):
     lang: Literal["en", "ar"] = "en"
     consent: bool
     website: str = Field(default="", max_length=200)  # honeypot: real users leave it empty
+    elapsed_ms: int | None = Field(default=None, ge=0)  # time the form was open; bots post instantly
+    source: str = Field(default="", max_length=200)  # page the enquiry came from (e.g. a project), for context
 
     @field_validator("name", "message", mode="before")
     @classmethod
@@ -162,8 +197,43 @@ class EnquiryIn(BaseModel):
 
 # ---------- admin ----------
 class LoginIn(BaseModel):
-    email: str
+    email: str = Field(max_length=255)
     password: str = Field(max_length=200)
+
+
+class PasswordChangeIn(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: str = Field(max_length=200)
+
+
+Role = Literal["admin", "editor", "viewer"]
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    email: str
+    role: str
+    created_at: datetime
+
+
+class UserCreateIn(BaseModel):
+    email: str = Field(max_length=255)
+    role: Role = "editor"
+    password: str = Field(max_length=200)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("invalid email")
+        return v
+
+
+class UserUpdateIn(BaseModel):
+    role: Role | None = None
+    password: str | None = Field(default=None, max_length=200)
 
 
 class ProjectIn(BaseModel):
@@ -198,6 +268,9 @@ class ProjectAdminOut(ProjectIn):
     slug: str
     logo: ImageOut | None
     cover: ImageOut | None
+    completeness: int = 0  # % of the recommended fields that are filled in
+    missing: list[str] = []
+    is_public: bool = False  # true when the public site shows it right now
     images: list[ProjectImageOut]
 
 
@@ -214,7 +287,7 @@ class ProjectImagePatch(BaseModel):
 class ClientIn(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     url: str = Field(default="", max_length=300)
-    published: bool = True
+    published: bool = False  # publish only after the client approved the use of its logo
     sort_order: int = 0
 
 
@@ -254,7 +327,33 @@ class EnquiryAdminOut(BaseModel):
     contact_method: str
     lang: str
     status: EnquiryStatus
+    notify_status: str = ""
+    notify_attempts: int = 0
+    notify_error: str = ""
+    notified_at: datetime | None = None
 
 
 class EnquiryStatusIn(BaseModel):
     status: EnquiryStatus
+
+
+class OrderIn(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=2000)
+
+
+class TestimonialIn(BaseModel):
+    quote_en: str = Field(default="", max_length=2000)
+    quote_ar: str = Field(default="", max_length=2000)
+    author: str = Field(min_length=1, max_length=120)
+    role_en: str = Field(default="", max_length=160)
+    role_ar: str = Field(default="", max_length=160)
+    company: str = Field(default="", max_length=160)
+    approval_note: str = Field(default="", max_length=300)
+    approved: bool = False
+    published: bool = False
+    sort_order: int = 0
+
+
+class TestimonialAdminOut(TestimonialIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int

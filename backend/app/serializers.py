@@ -43,17 +43,17 @@ def card_out(p: Project) -> ProjectCardOut:
         is_render=bool(p.is_render or (cover and cover.is_render)),
         featured=p.featured,
         cover=image_out(cover.image) if cover else None,
+        tagline_en=p.tagline_en or "",
+        tagline_ar=p.tagline_ar or "",
     )
 
 
-def detail_out(p: Project, related: list[Project]) -> ProjectDetailOut:
+def detail_out(p: Project, related: list[Project], prev: Project | None = None, nxt: Project | None = None) -> ProjectDetailOut:
     gallery = [project_image_out(i) for i in p.images]
     return ProjectDetailOut(
         **card_out(p).model_dump(),
         summary_en=p.summary_en,
         summary_ar=p.summary_ar,
-        tagline_en=p.tagline_en,
-        tagline_ar=p.tagline_ar,
         story_en=p.story_en,
         story_ar=p.story_ar,
         details_en=p.details_en,
@@ -65,6 +65,8 @@ def detail_out(p: Project, related: list[Project]) -> ProjectDetailOut:
         scope_ar=p.scope_ar,
         gallery=gallery,
         related=[card_out(r) for r in related],
+        prev=card_out(prev) if prev else None,
+        next=card_out(nxt) if nxt else None,
     )
 
 
