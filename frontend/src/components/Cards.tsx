@@ -58,7 +58,7 @@ export function ProjectTile({ p }: { p: ProjectCardData }) {
     <Link to={lp(`/projects/${p.slug}`)} className={`tile${p.cover ? "" : " tile--text"}`} aria-label={title}>
       {!p.cover && <span className="tile__name">{title}</span>}
       <Photo img={p.cover} alt={title} ratio="5/4" sizes="(min-width:1100px) 25vw, (min-width:700px) 33vw, 50vw" />
-      {p.is_render && <span className="badge">{t.projects.render}</span>}
+      {p.is_render && <span className="badge badge--sm">{t.projects.renderShort}</span>}
       <span className="tile__veil">
         <b>{title}</b>
         <span>{meta}</span>

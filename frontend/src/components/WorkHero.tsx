@@ -5,7 +5,7 @@ import { prefersReducedMotion } from "../lib/hooks";
 import { useLang } from "../lib/context";
 
 /** Full-width intro with a darkened image; the text fades out while scrolling. */
-export function WorkHero({ title, sub, bg, target }: { title: string; sub: string; bg?: Img | null; target: string }) {
+export function WorkHero({ title, sub, bg, target, compact }: { title: string; sub: string; bg?: Img | null; target: string; compact?: boolean }) {
   const { t } = useLang();
   const copy = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -25,7 +25,7 @@ export function WorkHero({ title, sub, bg, target }: { title: string; sub: strin
     };
   }, []);
   return (
-    <section className="work-hero" data-dark>
+    <section className={`work-hero${compact ? " work-hero--compact" : ""}`} data-dark>
       {bg && (
         <div className="work-hero__bg" aria-hidden="true">
           <Photo img={bg} alt="" ratio="16/9" dark priority sizes="100vw" />
@@ -34,10 +34,10 @@ export function WorkHero({ title, sub, bg, target }: { title: string; sub: strin
       <div className="work-hero__copy" ref={copy}>
         <h1>{title}</h1>
         <p>{sub}</p>
-        <button type="button" className="scroll-cue" onClick={() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth" })}>
+        {!compact && <button type="button" className="scroll-cue" onClick={() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth" })}>
           {t.home.scrollCue}
           <svg width="40" height="20" viewBox="0 0 40 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M2 3l18 14L38 3" /></svg>
-        </button>
+        </button>}
       </div>
     </section>
   );

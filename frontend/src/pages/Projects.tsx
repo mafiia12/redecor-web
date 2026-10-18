@@ -36,16 +36,16 @@ export default function Projects() {
 
   return (
     <>
-      <WorkHero title={t.home.workTitle} sub={t.projects.description} bg={data?.site_images["projects-hero"]?.image ?? all.find((p) => p.cover)?.cover} target="work-grid" />
+      <WorkHero title={t.home.workTitle} sub={t.projects.description} bg={data?.site_images["projects-hero"]?.image ?? all.find((p) => p.cover)?.cover} target="work-grid" compact />
       <section className="section" id="work-grid" style={{ paddingBlock: "56px 96px" }}>
-        <div className="container container--wide">
+        <div className="container">
           <div className="filters" style={{ marginBottom: 32 }}>
-            <Segmented
+            {countries.length > 1 && <Segmented
               label={t.filters.country}
               value={country}
               onChange={(v) => update("country", v)}
               options={[{ value: "all" as const, label: t.filters.all }, ...countries.map((v) => ({ value: v, label: t.filters[v] }))]}
-            />
+            />}
             <Segmented
               label={t.filters.type}
               value={type}

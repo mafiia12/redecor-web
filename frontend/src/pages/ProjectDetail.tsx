@@ -79,10 +79,20 @@ export default function ProjectDetail() {
   const tagline = pick(p, "tagline", lang);
   const summary = pick(p, "summary", lang);
   const story = parseStory(pick(p, "story", lang));
-  const details = parseDetails(pick(p, "details", lang));
+  const written = parseDetails(pick(p, "details", lang));
   const place = [pick(p, "city", lang), t.countries[p.country]].filter(Boolean).join(lang === "ar" ? "، " : ", ");
   const area = p.area_m2 ? `${p.area_m2.toLocaleString(lang === "ar" ? "ar-EG" : "en")} ${t.form.unit}` : "";
-  const meta = [t.types[p.type], p.year, area, pick(p, "scope", lang)].filter(Boolean).join(" · ");
+  // Facts written in the admin win; otherwise build them from the project fields (never shown twice).
+  const details: (readonly [string, string])[] = written.length
+    ? written
+    : ([
+        [t.projects.facts.client, p.client_name],
+        [t.projects.facts.city, place],
+        [t.projects.facts.type, t.types[p.type]],
+        [t.projects.facts.year, p.year ? String(p.year) : ""],
+        [t.projects.facts.area, area],
+        [t.projects.facts.scope, pick(p, "scope", lang)],
+      ] as const).filter(([, v]) => v);
 
   return (
     <article className="case fade-in">
@@ -106,8 +116,6 @@ export default function ProjectDetail() {
       <div className="case__col case__text">
         {tagline && <p className="case__tagline">{tagline}</p>}
         {summary && <p>{summary}</p>}
-        <p className="case__meta">{[place, p.client_name].filter(Boolean).join(" · ")}</p>
-        {meta && <p className="case__meta">{meta}</p>}
         {details.length > 0 && (
           <dl className="case__facts">
             {details.map(([k, v], i) => (k ? <div key={i} style={{ display: "contents" }}><dt>{k}</dt><dd>{v}</dd></div> : <dd key={i} style={{ gridColumn: "1 / -1" }}>{v}</dd>))}
@@ -130,7 +138,7 @@ export default function ProjectDetail() {
                 <figure key={g.id}>
                   <div style={{ position: "relative" }}>
                     <Photo img={g.image} alt={cap || title} ratio={`${g.image.width}/${g.image.height}`} sizes={row.length === 2 ? "(min-width:900px) 600px, 100vw" : "(min-width:1200px) 1200px, 100vw"} />
-                    {g.is_render && <span className="badge">{t.projects.render}</span>}
+                    {g.is_render && !p.is_render && <span className="badge badge--sm">{t.projects.renderShort}</span>}
                   </div>
                   {cap && <figcaption>{cap}</figcaption>}
                 </figure>

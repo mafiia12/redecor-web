@@ -9,7 +9,6 @@ import { Divisions } from "../components/Divisions";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
 import { ProjectStrip } from "../components/ProjectStrip";
-import { Reveal } from "../components/Reveal";
 import { useData, useLang, usePageMeta } from "../lib/context";
 import type { Country } from "../lib/api";
 import { useHeroScale } from "../lib/hooks";
@@ -21,7 +20,8 @@ export default function Home() {
   const { data, error, reload } = useData();
   const [country, setCountry] = useState<"all" | Country>("all");
   const heroRef = useHeroScale<HTMLDivElement>();
-  const mode = useMode();
+  const dark = useMode() === "dark";
+  const hasHeroImg = !!data?.site_images["home-hero"];
   usePageMeta(t.home.title, t.home.description);
 
   const strip = useMemo(() => (data?.projects ?? []).filter((p) => p.featured && p.cover).slice(0, 8), [data]);
@@ -33,44 +33,34 @@ export default function Home() {
 
   return (
     <>
-      {strip.length >= 3 ? (
-        <>
-          <ProjectStrip projects={strip} />
-          <section className="intro">
-            <div className="container">
-              <div className="brandmark"><img src={mode === "dark" ? "/logo-light.svg" : "/logo-ink.svg"} alt={t.brand} width={260} height={150} /></div>
-              <h1 className="display">{t.home.h1}</h1>
-              <p className="lead" style={{ maxWidth: 720 }}>{t.home.sub}</p>
-              <div className="btn-row center btn-row--stack" style={{ marginTop: 12 }}>
+      {strip.length >= 3 && <ProjectStrip projects={strip} />}
+      <section className={`lead-hero${strip.length >= 3 ? " lead-hero--after-strip" : ""}${hasHeroImg ? " lead-hero--img" : ""}`} data-dark={dark || hasHeroImg || undefined}>
+        {hasHeroImg && (
+          <div className="lead-hero__bg" ref={heroRef}>
+            <SitePhoto slot="home-hero" ratio="16/9" priority alt={t.home.heroAlt} sizes="100vw" />
+          </div>
+        )}
+        <div className="container lead-hero__inner">
+          <img className="lead-hero__logo" src={dark || hasHeroImg ? "/logo-light.svg" : "/logo-ink.svg"} alt={t.brand} width={420} height={240} />
+          <div className="lead-hero__bottom">
+            <h1 className="lead-hero__h1">{t.home.h1}</h1>
+            <div className="lead-hero__row">
+              <p>{t.home.sub}</p>
+              <div className="lead-hero__ctas">
                 <Link to={lp("/contact")} className="btn">{t.cta}</Link>
                 <Link to={lp("/projects")} className="link">{t.home.seeProjects}</Link>
               </div>
             </div>
-          </section>
-        </>
-      ) : (
-      <section className="hero" data-dark>
-        <div className="hero__copy">
-          <div className="brandmark"><img src="/logo-light.svg" alt={t.brand} width={260} height={150} /></div>
-          <h1 className="display">{t.home.h1}</h1>
-          <p className="lead">{t.home.sub}</p>
-          <div className="btn-row center btn-row--stack" style={{ marginTop: 16 }}>
-            <Link to={lp("/contact")} className="btn">{t.cta}</Link>
-            <Link to={lp("/projects")} className="link">{t.home.seeProjects}</Link>
           </div>
         </div>
-        <div className="hero__media" ref={heroRef}>
-          <SitePhoto hideIfEmpty slot="home-hero" ratio="16/9" dark priority alt={t.home.heroAlt} hint="Hero: finished villa living room, warm daylight" sizes="(min-width:1440px) 1440px, 100vw" />
-        </div>
       </section>
-      )}
 
       <section className="section" aria-labelledby="services-title">
         <div className="container">
           <SectionHead id="services-title" index="01" eyebrow={t.eyebrow.services} title={t.home.servicesTitle} sub={t.home.servicesSub} />
           <ul className="svc">
             {services[lang].map((s, i) => (
-              <Reveal as="li" key={s.slug} delay={i * 60}>
+              <li key={s.slug}>
                 <Link to={lp(`/services/${s.slug}`)} className="svc__row">
                   <span className="svc__n">{String(i + 1).padStart(2, "0")}</span>
                   <span className="svc__title">{s.title}</span>
@@ -78,7 +68,7 @@ export default function Home() {
                   <span className="svc__thumb"><SitePhoto slot={`service-${s.slug}`} ratio="4/3" alt="" sizes="160px" /></span>
                   <span className="svc__arrow" aria-hidden="true">→</span>
                 </Link>
-              </Reveal>
+              </li>
             ))}
           </ul>
         </div>

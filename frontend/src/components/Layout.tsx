@@ -26,6 +26,8 @@ function ScrollManager() {
 
 export function Layout({ cta = true }: { cta?: boolean }) {
   const { t } = useLang();
+  const { pathname } = useLocation();
+  const onContact = /\/contact\/?$/.test(pathname);
   return (
     <>
       <a className="skip" href="#main">
@@ -35,7 +37,7 @@ export function Layout({ cta = true }: { cta?: boolean }) {
       <Header />
       <main id="main">
         <Outlet />
-        {cta && <CtaBand />}
+        {cta && !onContact && <CtaBand />}
       </main>
       <Footer />
       <ScrollTop />

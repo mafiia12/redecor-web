@@ -11,12 +11,13 @@ export function OfficeCard({ office }: { office: Office }) {
     (address && !address.includes("[")
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address.replace(/\n/g, ", "))}`
       : "");
-  const rows: [string, React.ReactNode][] = [
-    [t.office.rows[0], address],
-    [t.office.rows[1], isRealNumber(office.phone) ? <a className="ltr" href={`tel:+${waDigits(office.phone)}`}>{office.phone}</a> : <span className="ltr">{office.phone}</span>],
-    [t.office.rows[2], isRealNumber(wa) ? <a className="ltr" href={waLink(wa)} target="_blank" rel="noopener noreferrer">{wa}</a> : <span className="ltr">{wa}</span>],
-    [t.office.rows[3], office.email.includes("@") && !office.email.includes("[") ? <a className="ltr" href={`mailto:${office.email}`}>{office.email}</a> : <span className="ltr">{office.email}</span>],
-    [t.office.rows[4], hours],
+  const ok = (v: string) => !!v && !v.includes("[");
+  const rows: [string, React.ReactNode, string][] = [
+    [t.office.rows[0], address, address],
+    [t.office.rows[1], isRealNumber(office.phone) ? <a className="ltr" href={`tel:+${waDigits(office.phone)}`}>{office.phone}</a> : <span className="ltr">{office.phone}</span>, office.phone],
+    [t.office.rows[2], isRealNumber(wa) ? <a className="ltr" href={waLink(wa)} target="_blank" rel="noopener noreferrer">{wa}</a> : <span className="ltr">{wa}</span>, wa],
+    [t.office.rows[3], office.email.includes("@") && !office.email.includes("[") ? <a className="ltr" href={`mailto:${office.email}`}>{office.email}</a> : <span className="ltr">{office.email}</span>, office.email],
+    [t.office.rows[4], hours, hours],
   ];
   return (
     <section className="office" aria-label={t.countries[office.country]}>
@@ -25,7 +26,7 @@ export function OfficeCard({ office }: { office: Office }) {
         <h3 className="h3 h3--xl">{t.countries[office.country]}</h3>
       </div>
       <dl>
-        {rows.map(([label, value]) => (
+        {rows.filter(([, , raw]) => ok(raw)).map(([label, value]) => (
           <div key={label} style={{ display: "contents" }}>
             <dt>{label}</dt>
             <dd>{value}</dd>
