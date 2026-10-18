@@ -8,3 +8,12 @@ __pycache__/
 *.pyc
 test-results/
 playwright-report/
+# runtime data: never committed
+uploads/
+attachments/
+backups/
+*.bak
+*.db-journal
+.env.*
+!.env.example
+!.env.staging.example

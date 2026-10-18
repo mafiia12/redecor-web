@@ -105,6 +105,7 @@ export interface Bootstrap {
   projects: ProjectCard[];
   testimonials: Testimonial[];
   documents: Record<string, SiteDocument>;
+  attachments?: { max_files: number; max_file_mb: number; max_total_mb: number };
 }
 
 export class ApiError extends Error {
@@ -183,3 +184,27 @@ export interface EnquiryPayload {
 }
 export const sendEnquiry = (p: EnquiryPayload) =>
   request<{ ok: true }>("/api/enquiries", { method: "POST", body: JSON.stringify(p) });
+
+/** Quote form with files: one multipart request; onProgress gets the bytes uploaded so far (for per-file bars). */
+export function sendEnquiryWithFiles(p: EnquiryPayload, files: File[], onProgress: (loaded: number, total: number) => void): Promise<{ ok: true }> {
+  const body = new FormData();
+  body.append("data", JSON.stringify(p));
+  files.forEach((f) => body.append("files", f, f.name));
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/enquiries/with-files");
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded, e.total);
+    xhr.onload = () => {
+      let data: { detail?: unknown } | null = null;
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        /* non-JSON body (e.g. a proxy error page) */
+      }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data as { ok: true });
+      else reject(new ApiError(xhr.status, data?.detail ?? xhr.statusText));
+    };
+    xhr.onerror = () => reject(new ApiError(0, "network"));
+    xhr.send(body);
+  });
+}

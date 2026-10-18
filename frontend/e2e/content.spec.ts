@@ -1,11 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN } from "./global-setup";
+import { signIn } from "./helpers";
 
 async function login(page: Page) {
-  await page.goto("/admin/login");
-  await page.getByLabel("Email").fill(ADMIN.email);
-  await page.getByLabel("Password").fill(ADMIN.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await signIn(page);
   await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
 }
 

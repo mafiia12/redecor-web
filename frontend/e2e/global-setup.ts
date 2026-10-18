@@ -8,6 +8,8 @@ export default async function globalSetup(config: FullConfig) {
   const api = await request.newContext({ baseURL });
   const login = await api.post("/api/admin/login", { data: ADMIN });
   const { token } = await login.json();
+  // One login for the whole run (the login rate limit is real); tests reuse it via adminToken()/signIn().
+  process.env.E2E_ADMIN_TOKEN = token;
   const headers = { Authorization: `Bearer ${token}` };
   const existing = await (await api.get("/api/admin/projects", { headers })).json();
   if (existing.length) return;

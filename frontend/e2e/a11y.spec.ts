@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN } from "./global-setup";
+import { adminHeaders } from "./helpers";
 
 test("skip link is the first keyboard stop and moves focus to main", async ({ page }) => {
   await page.goto("/");
@@ -23,8 +23,7 @@ test("every image has an alt attribute; one language and direction per page", as
 
 test("lightbox: keyboard navigation and focus return (fixture photo in the throw-away test database)", async ({ page, request }) => {
   // A plain generated PNG is uploaded to the temporary e2e database only, to exercise the viewer.
-  const { token } = await (await request.post("/api/admin/login", { data: ADMIN })).json();
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = adminHeaders();
   const project = await (await request.post("/api/admin/projects", { headers, data: { title_en: "E2E Lightbox Fixture", country: "eg", type: "office", published: true } })).json();
   // Two distinct flat-colour PNGs (identical files would be skipped as duplicates).
   const png = async (color: string) => {

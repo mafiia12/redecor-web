@@ -13,6 +13,7 @@ const env = {
   APP_ENV: "development",
   DATABASE_URL: `sqlite:///${join(dir, "e2e.db")}`,
   UPLOAD_DIR: join(dir, "uploads"),
+  ATTACHMENTS_DIR: join(dir, "attachments"),
   FRONTEND_DIST: resolve(import.meta.dirname, "../dist"),
   SECRET_KEY: "e2e-secret-key-e2e-secret-key-e2e-secret-key",
   ADMIN_EMAIL: "e2e-admin@example.com",

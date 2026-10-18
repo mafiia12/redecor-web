@@ -52,6 +52,8 @@ def build_message(e: Enquiry) -> EmailMessage:
         f"Project type: {e.project_type or '-'}",
         f"Approx. area: {f'{e.area_m2:g} m2' if e.area_m2 else '-'}",
         f"Language: {e.lang}",
+        f"Sent from: {e.source_page or '-'}",
+        f"Attachments: {len(e.attachments)} (download them in the admin; files are never e-mailed)" if e.attachments else "Attachments: none",
         f"Received: {e.created_at:%Y-%m-%d %H:%M} UTC" if e.created_at else "",
         "",
         "Message:",

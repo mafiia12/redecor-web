@@ -18,3 +18,17 @@ export async function noHorizontalScroll(page: Page) {
 export async function oneH1(page: Page) {
   await expect(page.locator("h1")).toHaveCount(1);
 }
+
+/** The admin token from global-setup (one login per run, so tests never trip the login rate limit). */
+export function adminToken() {
+  const t = process.env.E2E_ADMIN_TOKEN;
+  if (!t) throw new Error("E2E_ADMIN_TOKEN missing: global-setup did not run");
+  return t;
+}
+export const adminHeaders = () => ({ Authorization: `Bearer ${adminToken()}` });
+
+/** Open the admin already signed in (the sign-in form itself is tested in admin.spec.ts). */
+export async function signIn(page: Page, path = "/admin/projects") {
+  await page.addInitScript((t) => sessionStorage.setItem("redecor:admin-token", t), adminToken());
+  await page.goto(path);
+}

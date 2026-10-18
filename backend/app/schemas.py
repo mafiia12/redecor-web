@@ -152,6 +152,7 @@ class BootstrapOut(BaseModel):
     projects: list[ProjectCardOut]
     testimonials: list[TestimonialOut] = []
     documents: dict[str, DocumentOut] = {}
+    attachments: dict[str, int] = {}  # quote-form limits: max_files, max_file_mb, max_total_mb
 
 
 EventName = Literal[

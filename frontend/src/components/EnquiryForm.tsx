@@ -1,8 +1,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { track } from "../lib/analytics";
-import { ApiError, sendEnquiry, type Country } from "../lib/api";
-import { useLang } from "../lib/context";
+import { ApiError, sendEnquiry, sendEnquiryWithFiles, type Country } from "../lib/api";
+import { useData, useLang } from "../lib/context";
 
 type Field = "name" | "phone" | "email" | "country" | "service" | "area" | "consent";
 interface Values {
@@ -19,6 +19,11 @@ interface Values {
   consent: boolean;
   website: string;
 }
+const ALLOWED = ["pdf", "dwg", "dxf", "xlsx", "xls", "docx", "jpg", "jpeg", "png", "zip"];
+const ACCEPT = ALLOWED.map((x) => `.${x}`).join(",");
+const MB = 1024 * 1024;
+const ext = (name: string) => name.toLowerCase().split(".").pop() ?? "";
+
 const BLANK: Values = { name: "", code: "+20", phone: "", email: "", country: "", service: "", type: "", area: "", message: "", method: "whatsapp", consent: false, website: "" };
 
 function validate(v: Values): Partial<Record<Field, true>> {
@@ -49,6 +54,42 @@ export function EnquiryForm() {
   const [serverError, setServerError] = useState("");
   const form = useRef<HTMLFormElement>(null);
   const hasErrors = Object.keys(errs).length > 0;
+  const { data } = useData();
+  const limits = data?.attachments ?? { max_files: 3, max_file_mb: 15, max_total_mb: 30 };
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileErr, setFileErr] = useState("");
+  const [loaded, setLoaded] = useState<number | null>(null); // bytes uploaded so far while sending
+
+  function addFiles(list: FileList | null) {
+    if (!list) return;
+    const next = [...files];
+    let problem = "";
+    for (const file of Array.from(list)) {
+      if (next.some((x) => x.name === file.name && x.size === file.size)) continue;
+      if (!ALLOWED.includes(ext(file.name)) || file.size === 0) problem ||= f.files.type(file.name);
+      else if (file.size > limits.max_file_mb * MB) problem ||= f.files.tooLarge(file.name, limits.max_file_mb);
+      else if (next.length >= limits.max_files) problem ||= f.files.tooMany(limits.max_files);
+      else if (next.reduce((n, x) => n + x.size, 0) + file.size > limits.max_total_mb * MB) problem ||= f.files.total(limits.max_total_mb);
+      else next.push(file);
+    }
+    setFiles(next);
+    setFileErr(problem);
+  }
+  /** Server-side refusal of a file (content check, limits) as a friendly, translated message. */
+  function fileProblem(err: ApiError): string {
+    const d = (err.detail ?? {}) as { code?: string; file?: string; max?: number; max_mb?: number };
+    if (d.code === "file_type") return f.files.type(d.file ?? "");
+    if (d.code === "file_too_large") return f.files.tooLarge(d.file ?? "", d.max_mb ?? limits.max_file_mb);
+    if (d.code === "too_many_files") return f.files.tooMany(d.max ?? limits.max_files);
+    if (d.code === "total_too_large" || err.status === 413) return f.files.total(limits.max_total_mb);
+    return "";
+  }
+  const totalSize = files.reduce((n, x) => n + x.size, 0);
+  const fileProgress = (i: number) => {
+    if (loaded === null || !totalSize) return 0;
+    const before = files.slice(0, i).reduce((n, x) => n + x.size, 0);
+    return Math.max(0, Math.min(1, (loaded - before) / files[i].size));
+  };
 
   const set = <K extends keyof Values>(k: K, val: Values[K]) => {
     const next = { ...v, [k]: val };
@@ -75,8 +116,7 @@ export function EnquiryForm() {
     }
     setState("sending");
     track("enquiry_submit");
-    try {
-      await sendEnquiry({
+    const payload = {
         name: v.name.trim(),
         phone: `${v.code} ${v.phone.trim()}`,
         email: v.email.trim(),
@@ -91,13 +131,26 @@ export function EnquiryForm() {
         website: v.website,
         elapsed_ms: Date.now() - started.current,
         source: ref,
-      });
+    };
+    try {
+      if (files.length) {
+        setLoaded(0);
+        // the request also carries the form fields: scale progress to the files' share of it
+        await sendEnquiryWithFiles(payload, files, (done, all) => setLoaded((done / all) * totalSize));
+      } else await sendEnquiry(payload);
+      setLoaded(null);
+      setFiles([]);
       track("enquiry_success");
       setState("done");
       window.scrollTo({ top: form.current ? form.current.getBoundingClientRect().top + window.scrollY - 140 : 0, behavior: "smooth" });
     } catch (err) {
       setState("idle");
-      if (err instanceof ApiError && err.status === 429) setServerError(f.tooMany);
+      setLoaded(null);
+      const fp = err instanceof ApiError ? fileProblem(err) : "";
+      if (fp) {
+        setFileErr(fp);
+        setServerError(fp);
+      } else if (err instanceof ApiError && err.status === 429) setServerError(f.tooMany);
       else if (err instanceof ApiError && err.status === 422) {
         const bad: Partial<Record<Field, true>> = {};
         const list = Array.isArray(err.detail) ? (err.detail as { loc?: string[] }[]) : [];
@@ -123,6 +176,8 @@ export function EnquiryForm() {
           className="btn btn--outline"
           onClick={() => {
             setV(BLANK);
+            setFiles([]);
+            setFileErr("");
             setErrs({});
             setCodeTouched(false);
             setState("idle");
@@ -242,6 +297,46 @@ export function EnquiryForm() {
         </div>
       </div>
 
+      <div className="field full">
+        <span className="label" id="f-files-label">{f.files.label}</span>
+        <p className="caption" id="f-files-hint" style={{ margin: "0 0 8px" }}>{f.files.hint(limits.max_files, limits.max_file_mb, limits.max_total_mb)} {f.files.privacy}</p>
+        <label className={`btn btn--outline btn--sm file-pick${files.length >= limits.max_files || state === "sending" ? " is-disabled" : ""}`}>
+          {f.files.add}
+          <input
+            type="file"
+            name="files"
+            multiple
+            accept={ACCEPT}
+            className="sr-only"
+            aria-labelledby="f-files-label"
+            aria-describedby={fileErr ? "f-files-err f-files-hint" : "f-files-hint"}
+            disabled={files.length >= limits.max_files || state === "sending"}
+            onChange={(e) => {
+              addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {fileErr && <span className="err" id="f-files-err" role="alert">{fileErr}</span>}
+        {files.length > 0 && (
+          <ul className="file-list">
+            {files.map((file, i) => (
+              <li key={`${file.name}-${file.size}`}>
+                <span className="file-list__name" dir="auto">{file.name}</span>
+                <span className="caption">{f.files.size((file.size / MB).toFixed(1))}</span>
+                {loaded !== null ? (
+                  <progress max={1} value={fileProgress(i)} aria-label={f.files.uploading(Math.round(fileProgress(i) * 100))} />
+                ) : (
+                  <button type="button" className="file-list__remove" aria-label={f.files.remove(file.name)} onClick={() => { setFiles(files.filter((_, j) => j !== i)); setFileErr(""); }}>
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* Honeypot: hidden from people and assistive tech; bots fill it in. */}
       <div className="hp" aria-hidden="true">
         <label>
@@ -262,7 +357,7 @@ export function EnquiryForm() {
 
       <div className="full btn-row btn-row--stack">
         <button type="submit" className="btn" disabled={state === "sending"}>
-          {state === "sending" ? f.sending : f.send}
+          {state === "sending" ? (loaded !== null && totalSize ? f.files.uploading(Math.round((loaded / totalSize) * 100)) : f.sending) : f.send}
         </button>
         <span className="caption">{f.req}</span>
       </div>
