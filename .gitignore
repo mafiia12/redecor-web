@@ -4,3 +4,5 @@ dist
 *.db
 portfolio_preview/
 clients_preview/
+__pycache__/
+*.pyc
