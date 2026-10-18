@@ -133,3 +133,32 @@ def test_media_is_cached(client, auth):
 def test_unknown_api_path_is_json_404(client):
     r = client.get("/api/nope")
     assert r.status_code == 404 and r.json()["detail"] == "Not found"
+
+
+def test_standalone_project_page_fields(client, auth):
+    r = client.post(
+        "/api/admin/projects",
+        headers=auth,
+        json=dict(
+            title_en="Obliq Test", country="eg", type="office", tagline_en="Rooted in place",
+            story_en="## Vision\n\nText", client_name="ACME",
+        ),
+    )
+    assert r.status_code == 201
+    pid = r.json()["id"]
+    files = [("files", ("a.png", make_png(), "image/png")), ("files", ("b.png", make_png(), "image/png"))]
+    imgs = client.post(f"/api/admin/projects/{pid}/images", headers=auth, files=files).json()
+    assert imgs[0]["layout"] == "full"
+    assert client.patch(f"/api/admin/project-images/{imgs[1]['id']}", headers=auth, json={"layout": "half"}).status_code == 200
+    assert client.patch(f"/api/admin/project-images/{imgs[1]['id']}", headers=auth, json={"layout": "bogus"}).status_code == 422
+
+    lg = client.post(f"/api/admin/projects/{pid}/logo", headers=auth, files={"file": ("l.png", make_png(), "image/png")})
+    assert lg.status_code == 200 and lg.json()["logo"]["src"]
+
+    pub = client.get("/api/projects/obliq-test").json()
+    assert pub["tagline_en"] == "Rooted in place" and pub["client_name"] == "ACME" and pub["logo"]
+    assert [g["layout"] for g in pub["gallery"]] == ["full", "half"]
+
+    assert client.delete(f"/api/admin/projects/{pid}/logo", headers=auth).status_code == 204
+    assert client.get("/api/projects/obliq-test").json()["logo"] is None
+    client.delete(f"/api/admin/projects/{pid}", headers=auth)

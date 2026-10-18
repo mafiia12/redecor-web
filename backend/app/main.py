@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from . import models  # noqa: F401  (register tables)
 from .config import settings
-from .db import Base, SessionLocal, engine
+from .db import Base, SessionLocal, engine, ensure_columns
 from .models import Project
 from .routers import admin, public
 from .seed import seed
@@ -23,6 +23,7 @@ logging.basicConfig(level=logging.INFO)
 async def lifespan(_: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(engine)
+    ensure_columns()
     with SessionLocal() as db:
         seed(db)
     yield

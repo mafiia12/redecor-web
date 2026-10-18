@@ -141,7 +141,7 @@ def collect(project: dict, pdf_dir: Path, max_images: int):
 
 def load_folder(folder: Path, max_images: int):
     """Images from a folder (e.g. best renders pulled from the company server). Optional images.json:
-    {"01.jpg": {"is_render": true, "role": "cover"|"gallery", "caption_en": "..."}}"""
+    {"01.jpg": {"is_render": true, "role": "cover"|"gallery", "caption_en": "...", "caption_ar": "...", "layout": "full"|"half"}}"""
     import json as _json
 
     meta = {}
@@ -172,7 +172,8 @@ def load_folder(folder: Path, max_images: int):
             continue
         if im.width > MAX_W:
             im = im.resize((MAX_W, round(im.height * MAX_W / im.width)), Image.LANCZOS)
-        out.append((f.stem, im, bool(meta.get(f.name, {}).get("is_render", False)), meta.get(f.name, {}).get("caption_en", "")))
+        out.append((f.stem, im, bool(meta.get(f.name, {}).get("is_render", False)),
+                    {k: meta.get(f.name, {})[k] for k in ("caption_en", "caption_ar", "layout") if meta.get(f.name, {}).get(k)}))
     return out[:max_images]
 
 
@@ -260,6 +261,7 @@ def main():
             )
             continue
         body = {k: p[k] for k in ("slug", "title_en", "country", "type", "city_en", "scope_en", "summary_en", "is_render", "featured", "sort_order")}
+        body.update({k: p[k] for k in ("title_ar", "city_ar", "summary_ar", "scope_ar", "tagline_en", "tagline_ar", "story_en", "story_ar", "client_name") if p.get(k)})
         body["published"] = a.publish
         r = s.post(f"{a.api}/api/admin/projects", json=body)
         if r.status_code != 201:
@@ -277,7 +279,9 @@ def main():
                 patch = {}
                 if is_render and not p["is_render"]:
                     patch["is_render"] = True
-                if caption:
+                if isinstance(caption, dict):
+                    patch.update(caption)
+                elif caption:
                     patch["caption_en"] = caption
                 if patch:
                     s.patch(f"{a.api}/api/admin/project-images/{rec['id']}", json=patch)

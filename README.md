@@ -58,3 +58,7 @@ One `/api/bootstrap` call (ETag + sessionStorage) for first paint; route-level c
 
 ## Security notes
 scrypt password hashing, JWT (12 h) in sessionStorage, login and enquiry rate limits (in-memory, per process), honeypot, server-side validation, audit-log table for admin writes, security headers. Add a real privacy policy and email/WhatsApp notification of new enquiries before launch.
+
+
+## Standalone project pages
+Each project has its own Nuvelti-style page (black, narrow column): title, client logo banner, hero, tagline/summary, story (`## Heading` sections) and stacked photos; mark two consecutive photos as `Half` in /admin to show them side by side. Existing databases are migrated automatically on startup (`ensure_columns`). `images.json` in a server-render folder may also set `caption_ar` and `layout` (`full`/`half`).

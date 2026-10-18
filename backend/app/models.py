@@ -47,6 +47,13 @@ class Project(Base):
     area_m2: Mapped[float | None] = mapped_column(Float, nullable=True)
     scope_en: Mapped[str] = mapped_column(String(300), default="")
     scope_ar: Mapped[str] = mapped_column(String(300), default="")
+    tagline_en: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    tagline_ar: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    # Long-form text for the project page. Blank line = new paragraph; a line starting with "## " is a heading.
+    story_en: Mapped[str] = mapped_column(Text, default="", server_default="")
+    story_ar: Mapped[str] = mapped_column(Text, default="", server_default="")
+    client_name: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    logo_image_id: Mapped[int | None] = mapped_column(ForeignKey("images.id"), nullable=True)
     is_render: Mapped[bool] = mapped_column(Boolean, default=False)
     featured: Mapped[bool] = mapped_column(Boolean, default=True)
     published: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -54,6 +61,7 @@ class Project(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
+    logo: Mapped["Image | None"] = relationship(foreign_keys=[logo_image_id], lazy="joined")
     images: Mapped[list["ProjectImage"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
@@ -69,6 +77,7 @@ class ProjectImage(Base):
     is_cover: Mapped[bool] = mapped_column(Boolean, default=False)
     is_render: Mapped[bool] = mapped_column(Boolean, default=False)
     full_bleed: Mapped[bool] = mapped_column(Boolean, default=False)
+    layout: Mapped[str] = mapped_column(String(8), default="full", server_default="full")  # full | half
     caption_en: Mapped[str] = mapped_column(String(300), default="")
     caption_ar: Mapped[str] = mapped_column(String(300), default="")
     sort_order: Mapped[int] = mapped_column(Integer, default=0)

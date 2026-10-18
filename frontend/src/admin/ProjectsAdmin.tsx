@@ -30,9 +30,9 @@ export function ProjectsAdmin() {
   );
 }
 
-const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images"> = {
+const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images" | "logo"> = {
   title_en: "", title_ar: "", summary_en: "", summary_ar: "", city_en: "", city_ar: "", country: "eg", type: "residential",
-  year: null, area_m2: null, scope_en: "", scope_ar: "", is_render: false, featured: true, published: true, sort_order: 0,
+  year: null, area_m2: null, scope_en: "", scope_ar: "", tagline_en: "", tagline_ar: "", story_en: "", story_ar: "", client_name: "", is_render: false, featured: true, published: true, sort_order: 0,
 };
 
 export function ProjectEdit() {
@@ -99,6 +99,30 @@ export function ProjectEdit() {
     }
   }
 
+  async function uploadLogo(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !p) return;
+    setBusy(true);
+    try {
+      setP(await api<AdminProject>(`/projects/${p.id}/logo`, form("POST", { file })));
+      setMsg({ ok: true, text: "Logo uploaded." });
+    } catch (x) {
+      setMsg({ ok: false, text: errorText(x) });
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function removeLogo() {
+    if (!p) return;
+    try {
+      await api(`/projects/${p.id}/logo`, { method: "DELETE" });
+      setP(await api<AdminProject>(`/projects/${p.id}`));
+    } catch (x) {
+      setMsg({ ok: false, text: errorText(x) });
+    }
+  }
+
   const refresh = async () => p && setP(await api<AdminProject>(`/projects/${p.id}`));
   const patch = async (img: AdminImage, body: Partial<AdminImage>) => {
     try {
@@ -140,6 +164,12 @@ export function ProjectEdit() {
           <label className="f">Scope (Arabic)<input className="input" dir="rtl" value={v.scope_ar} onChange={(e) => set("scope_ar", e.target.value)} /></label>
           <label className="f">Summary (English)<textarea className="textarea" value={v.summary_en} onChange={(e) => set("summary_en", e.target.value)} /></label>
           <label className="f">Summary (Arabic)<textarea className="textarea" dir="rtl" value={v.summary_ar} onChange={(e) => set("summary_ar", e.target.value)} /></label>
+          <label className="f">Client name<input className="input" value={v.client_name} onChange={(e) => set("client_name", e.target.value)} /></label>
+          <span />
+          <label className="f">Tagline (English)<input className="input" value={v.tagline_en} onChange={(e) => set("tagline_en", e.target.value)} /></label>
+          <label className="f">Tagline (Arabic)<input className="input" dir="rtl" value={v.tagline_ar} onChange={(e) => set("tagline_ar", e.target.value)} /></label>
+          <label className="f">Story (English) — start a section with “## Heading”, blank line between paragraphs<textarea className="textarea" rows={8} value={v.story_en} onChange={(e) => set("story_en", e.target.value)} /></label>
+          <label className="f">Story (Arabic)<textarea className="textarea" rows={8} dir="rtl" value={v.story_ar} onChange={(e) => set("story_ar", e.target.value)} /></label>
           <label className="f">Display order (lower first)<input className="input" type="number" value={v.sort_order} onChange={(e) => set("sort_order", Number(e.target.value) || 0)} /></label>
         </div>
         <div className="adm-row" style={{ marginTop: 16, gap: 20 }}>
@@ -155,6 +185,12 @@ export function ProjectEdit() {
 
       {!isNew && p && (
         <>
+          <h2>Client logo (white banner under the title)</h2>
+          <div className="adm-drop">
+            {p.logo && <img src={p.logo.src} alt="" style={{ maxHeight: 56, background: "#fff", padding: 8, marginBottom: 12, display: "block" }} />}
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadLogo} disabled={busy} aria-label="Upload client logo" />
+            {p.logo && <button className="btn btn--danger btn--sm" style={{ marginInlineStart: 12 }} onClick={removeLogo}>Remove logo</button>}
+          </div>
           <h2>Photos</h2>
           <div className="adm-drop">
             <p style={{ margin: "0 0 12px" }}>JPEG, PNG or WebP up to 15 MB each. The first photo becomes the cover. Responsive sizes are generated automatically.</p>
@@ -168,6 +204,7 @@ export function ProjectEdit() {
                   <div className="adm-row">
                     <label className="adm-check"><input type="radio" name="cover" checked={img.is_cover} onChange={() => patch(img, { is_cover: true })} /> Cover</label>
                     <label className="adm-check"><input type="checkbox" checked={img.is_render} onChange={(e) => patch(img, { is_render: e.target.checked })} /> Render</label>
+                    <label className="adm-check"><select className="select" style={{ height: 32 }} value={img.layout} onChange={(e) => patch(img, { layout: e.target.value as "full" | "half" })}><option value="full">Full row</option><option value="half">Half (pairs)</option></select></label>
                     <label className="adm-check"><input type="checkbox" checked={img.full_bleed} onChange={(e) => patch(img, { full_bleed: e.target.checked })} /> Full-bleed</label>
                   </div>
                   <CaptionField img={img} onSave={patch} />

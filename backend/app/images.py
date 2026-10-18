@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .config import settings
-from .models import Client, Image, ProjectImage, SiteImage
+from .models import Client, Image, Project, ProjectImage, SiteImage
 
 PILImage.MAX_IMAGE_PIXELS = 80_000_000  # decompression-bomb guard
 TARGET_WIDTHS = (480, 960, 1600, 2400)
@@ -72,6 +72,7 @@ def delete_if_orphan(db: Session, image_id: int | None) -> None:
         db.scalar(select(func.count()).select_from(ProjectImage).where(ProjectImage.image_id == image_id))
         or db.scalar(select(func.count()).select_from(Client).where(Client.logo_image_id == image_id))
         or db.scalar(select(func.count()).select_from(SiteImage).where(SiteImage.image_id == image_id))
+        or db.scalar(select(func.count()).select_from(Project).where(Project.logo_image_id == image_id))
     )
     if used:
         return

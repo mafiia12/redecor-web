@@ -60,6 +60,7 @@ export interface AdminImage {
   is_cover: boolean;
   is_render: boolean;
   full_bleed: boolean;
+  layout: "full" | "half";
   caption_en: string;
   caption_ar: string;
   sort_order: number;
@@ -80,6 +81,12 @@ export interface AdminProject {
   area_m2: number | null;
   scope_en: string;
   scope_ar: string;
+  tagline_en: string;
+  tagline_ar: string;
+  story_en: string;
+  story_ar: string;
+  client_name: string;
+  logo: Img | null;
   is_render: boolean;
   featured: boolean;
   published: boolean;

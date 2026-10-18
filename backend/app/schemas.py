@@ -42,6 +42,7 @@ class ProjectImageOut(BaseModel):
     is_cover: bool
     is_render: bool
     full_bleed: bool
+    layout: str
     caption_en: str
     caption_ar: str
     sort_order: int
@@ -66,6 +67,12 @@ class ProjectCardOut(BaseModel):
 class ProjectDetailOut(ProjectCardOut):
     summary_en: str
     summary_ar: str
+    tagline_en: str
+    tagline_ar: str
+    story_en: str
+    story_ar: str
+    client_name: str
+    logo: ImageOut | None
     area_m2: float | None
     scope_en: str
     scope_ar: str
@@ -163,6 +170,11 @@ class ProjectIn(BaseModel):
     title_ar: str = Field(default="", max_length=200)
     summary_en: str = Field(default="", max_length=2000)
     summary_ar: str = Field(default="", max_length=2000)
+    tagline_en: str = Field(default="", max_length=300)
+    tagline_ar: str = Field(default="", max_length=300)
+    story_en: str = Field(default="", max_length=20000)
+    story_ar: str = Field(default="", max_length=20000)
+    client_name: str = Field(default="", max_length=200)
     city_en: str = Field(default="", max_length=100)
     city_ar: str = Field(default="", max_length=100)
     country: Country
@@ -180,6 +192,7 @@ class ProjectIn(BaseModel):
 class ProjectAdminOut(ProjectIn):
     id: int
     slug: str
+    logo: ImageOut | None
     cover: ImageOut | None
     images: list[ProjectImageOut]
 
@@ -188,6 +201,7 @@ class ProjectImagePatch(BaseModel):
     is_cover: bool | None = None
     is_render: bool | None = None
     full_bleed: bool | None = None
+    layout: Literal["full", "half"] | None = None
     caption_en: str | None = Field(default=None, max_length=300)
     caption_ar: str | None = Field(default=None, max_length=300)
     sort_order: int | None = None

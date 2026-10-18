@@ -27,6 +27,7 @@ export interface GalleryImage {
   is_cover: boolean;
   is_render: boolean;
   full_bleed: boolean;
+  layout: "full" | "half";
   caption_en: string;
   caption_ar: string;
   sort_order: number;
@@ -38,6 +39,12 @@ export interface ProjectDetail extends ProjectCard {
   area_m2: number | null;
   scope_en: string;
   scope_ar: string;
+  tagline_en: string;
+  tagline_ar: string;
+  story_en: string;
+  story_ar: string;
+  client_name: string;
+  logo: Img | null;
   gallery: GalleryImage[];
   related: ProjectCard[];
 }

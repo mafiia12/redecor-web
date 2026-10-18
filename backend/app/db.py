@@ -27,6 +27,28 @@ class Base(DeclarativeBase):
     pass
 
 
+def ensure_columns() -> None:
+    """Tiny forward-only migration: add columns that exist in the models but not yet in the database.
+    (Keeps existing local/production databases working when a new field is added.)"""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            have = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in have:
+                    continue
+                ddl = f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {col.type.compile(engine.dialect)}'
+                if col.server_default is not None:
+                    ddl += f" DEFAULT '{col.server_default.arg}'" if isinstance(col.server_default.arg, str) else ""
+                if not col.nullable and col.server_default is None:
+                    ddl += " DEFAULT 0"
+                conn.execute(text(ddl))
+
+
 def get_db():
     db = SessionLocal()
     try:

@@ -72,6 +72,7 @@ def _project_out(p: Project) -> ProjectAdminOut:
     return ProjectAdminOut(
         **{f: getattr(p, f) for f in ProjectIn.model_fields},
         id=p.id,
+        logo=image_out(p.logo),
         cover=image_out(cover.image) if cover else None,
         images=[project_image_out(i) for i in p.images],
     )
@@ -157,6 +158,33 @@ def upload_project_images(
     audit(db, user, "upload", "project_image", pid)
     db.commit()
     return [project_image_out(db.get(ProjectImage, c.id)) for c in created]
+
+
+@router.post("/projects/{pid}/logo", response_model=ProjectAdminOut)
+def upload_project_logo(
+    pid: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(current_user)
+):
+    """Client / brand logo shown on a banner at the top of the project page."""
+    p = _get_project(db, pid)
+    old = p.logo_image_id
+    img = process_upload(db, file, max_width=960)
+    p.logo_image_id = img.id
+    db.flush()
+    delete_if_orphan(db, old)
+    audit(db, user, "upload", "project_logo", pid)
+    db.commit()
+    db.expire_all()
+    return _project_out(_get_project(db, pid))
+
+
+@router.delete("/projects/{pid}/logo", status_code=204)
+def delete_project_logo(pid: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    p = _get_project(db, pid)
+    old, p.logo_image_id = p.logo_image_id, None
+    db.flush()
+    delete_if_orphan(db, old)
+    audit(db, user, "delete", "project_logo", pid)
+    db.commit()
 
 
 @router.patch("/project-images/{iid}", response_model=ProjectImageOut)
