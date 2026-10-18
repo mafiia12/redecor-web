@@ -47,6 +47,7 @@ def test_production_requires_admin_password_only_on_first_run(monkeypatch):
     monkeypatch.setattr(settings, "site_url", "https://redecorgroup.com")
     monkeypatch.setattr(settings, "seed_demo", False)
     monkeypatch.setattr(settings, "admin_password", "")
+    monkeypatch.setattr(settings, "enforce_approvals", True)
     app_main.check_production()  # no password needed once an admin exists (checked against the DB at startup)
     monkeypatch.setattr(settings, "enforce_approvals", False)
     with pytest.raises(RuntimeError, match="ENFORCE_APPROVALS"):
@@ -63,7 +64,7 @@ def _start(tmp_path, **env):
         "APP_ENV": "production", "SECRET_KEY": "k" * 48, "SITE_URL": "https://redecorgroup.com",
         "DATABASE_URL": f"sqlite:///{tmp_path / 'p.db'}", "UPLOAD_DIR": str(tmp_path / "up"),
         "ATTACHMENTS_DIR": str(tmp_path / "att"), "FRONTEND_DIST": str(tmp_path / "nodist"),
-        "ADMIN_EMAIL": "", "ADMIN_PASSWORD": "", "SEED_DEMO": "0", "NOTIFY_RETRY_SECONDS": "0",
+        "ADMIN_EMAIL": "", "ADMIN_PASSWORD": "", "SEED_DEMO": "0", "NOTIFY_RETRY_SECONDS": "0", "ENFORCE_APPROVALS": "1",
     }
     code = "from fastapi.testclient import TestClient\nfrom app.main import app\nwith TestClient(app) as c: print(c.get('/api/health').status_code)"
     return subprocess.run([sys.executable, "-c", code], env=os.environ | base | env, cwd=Path(__file__).parents[1],

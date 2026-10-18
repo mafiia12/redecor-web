@@ -120,9 +120,10 @@ export function ProjectView({ p, preview = false }: { p: Detail; preview?: boole
 
   const photo = (g: GalleryImage, sizes: string, priority = false) => {
     const cap = loc(g, "caption", lang);
+    const alt = (lang === "ar" ? g.alt_ar || g.alt_en : g.alt_en) || cap.text || title.text;
     return (
       <button type="button" className="case__zoom" onClick={() => setOpen(ordered.indexOf(g))} aria-label={`${t.lightbox.open}: ${cap.text || title.text}`}>
-        <Photo img={g.image} alt={cap.text || title.text} ratio={`${g.image.width}/${g.image.height}`} priority={priority} sizes={sizes} />
+        <Photo img={g.image} alt={alt} ratio={`${g.image.width}/${g.image.height}`} priority={priority} sizes={sizes} />
       </button>
     );
   };

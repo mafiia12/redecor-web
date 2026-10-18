@@ -1,9 +1,10 @@
 """Single source of truth for what the PUBLIC site may show. Admin endpoints see everything."""
 
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, exists, not_
+from sqlalchemy.orm import aliased
 
 from .config import settings
-from .models import Client, Office, Project, SiteDocument, Testimonial
+from .models import Approval, Client, Office, Project, SiteDocument, Testimonial
 
 TEST_SLUG_PREFIX = "test-project-"
 
@@ -13,17 +14,41 @@ def is_placeholder(text: str | None) -> bool:
     return bool(text) and "[" in text and "]" in text
 
 
+# What each kind of public item needs on record before it can be shown (Phase B2 publishing gate).
+REQUIRED_APPROVAL = {"project": "client_permission_to_publish", "client": "logo_usage_permission"}
+APPROVAL_TYPES = ("client_permission_to_publish", "logo_usage_permission", "photo_rights")
+APPROVAL_STATUSES = ("pending", "approved", "rejected", "revoked")
+
+
+def approved_clause(subject_type: str, id_column):
+    """True when the NEWEST approval row of the required type for this subject is 'approved'."""
+    a_type = REQUIRED_APPROVAL[subject_type]
+    later = aliased(Approval)
+    return exists().where(
+        Approval.subject_type == subject_type, Approval.subject_id == id_column, Approval.approval_type == a_type,
+        Approval.status == "approved",
+        ~exists().where(later.subject_type == Approval.subject_type, later.subject_id == Approval.subject_id,
+                        later.approval_type == Approval.approval_type, later.id > Approval.id),  # no newer row overrides it
+    )
+
+
 def public_projects():
-    """SQL filter: published, no "[placeholder]" title, and TEST data hidden unless ALLOW_TEST_CONTENT=1."""
+    """SQL filter: published, no "[placeholder]" title, TEST data hidden unless ALLOW_TEST_CONTENT=1, and
+    (ENFORCE_APPROVALS=1) a current approval to publish on record."""
     clauses = [Project.published.is_(True), not_(Project.title_en.contains("["))]
     if not settings.allow_test_content:
         clauses.append(not_(Project.slug.startswith(TEST_SLUG_PREFIX)))
+    if settings.enforce_approvals:
+        clauses.append(approved_clause("project", Project.id))
     return and_(*clauses)
 
 
 def public_clients():
-    """A client appears only when published, with a real name and an uploaded logo."""
-    return and_(Client.published.is_(True), Client.logo_image_id.is_not(None), not_(Client.name.contains("[")))
+    """A client appears only when published, with a real name, an uploaded logo and (gate on) logo permission."""
+    clauses = [Client.published.is_(True), Client.logo_image_id.is_not(None), not_(Client.name.contains("["))]
+    if settings.enforce_approvals:
+        clauses.append(approved_clause("client", Client.id))
+    return and_(*clauses)
 
 
 def public_testimonials():

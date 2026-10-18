@@ -12,6 +12,11 @@ os.environ.update(
     SECRET_KEY="test-secret-key-that-is-long-enough-123456",
     NOTIFY_RETRY_SECONDS="0",
     SEED_DEMO="1",
+    # first-release tests use small generated images and no approvals; batch-2 tests switch these on explicitly
+    IMAGE_MIN_LONG_EDGE="600",
+    IMAGE_MIN_COVER_LONG_EDGE="600",
+    ENFORCE_APPROVALS="0",
+    ATTACHMENTS_DIR=str(_tmp / "attachments"),
 )
 
 import io  # noqa: E402

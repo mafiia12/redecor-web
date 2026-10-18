@@ -37,6 +37,29 @@ export const form = (method: string, files: Record<string, File | File[]>): Requ
   return { method, body: fd };
 };
 
+/** multipart body with plain fields and files */
+export const multipart = (method: string, fields: Record<string, string | boolean | number>, files: Record<string, File | File[] | null | undefined> = {}): RequestInit => {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.append(k, String(v));
+  for (const [k, v] of Object.entries(files)) if (v) (Array.isArray(v) ? v : [v]).forEach((f) => fd.append(k, f));
+  return { method, body: fd };
+};
+
+/** Download an admin-only file (export, attachment) with the session token, then save it. */
+export async function downloadFile(path: string, fallbackName: string) {
+  const res = await fetch(`/api/admin${path}`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
+  if (!res.ok) throw new ApiError(res.status, (await res.json().catch(() => ({}))).detail ?? res.statusText);
+  const cd = res.headers.get("content-disposition") ?? "";
+  const m = cd.match(/filename\*=UTF-8''([^;]+)/i) ?? cd.match(/filename="?([^";]+)"?/i);
+  const name = m ? decodeURIComponent(m[1]) : fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) {
     if (Array.isArray(e.detail)) return e.detail.map((d: { loc?: string[]; msg?: string }) => `${d.loc?.slice(1).join(".")}: ${d.msg}`).join("; ");
@@ -65,6 +88,13 @@ export interface AdminImage {
   caption_ar: string;
   sort_order: number;
   image: Img;
+  kind: "render" | "executed" | null;
+  alt_en: string;
+  alt_ar: string;
+  focal_x: number | null;
+  focal_y: number | null;
+  quality_warnings: string;
+  quality_override_by: string;
 }
 export interface AdminProject {
   id: number;
@@ -98,6 +128,8 @@ export interface AdminProject {
   completeness: number;
   missing: string[];
   is_public: boolean;
+  block_reasons: string[];
+  images_without_kind: number;
 }
 export interface AdminClient {
   id: number;
@@ -106,6 +138,9 @@ export interface AdminClient {
   published: boolean;
   sort_order: number;
   logo: Img | null;
+  approval_status: string;
+  is_public: boolean;
+  block_reasons: string[];
 }
 export interface AdminSlot {
   slot: string;

@@ -101,7 +101,7 @@ def resolve(db: Session, raw_path: str) -> Head:
             title = (p.title_ar if lang == "ar" and p.title_ar else p.title_en)
             desc = (p.summary_ar if lang == "ar" and p.summary_ar else p.summary_en) or (
                 p.tagline_ar if lang == "ar" and p.tagline_ar else p.tagline_en) or HOME[lang][1]
-            cover = cover_of(p)
+            cover = cover_of(p, public=True)
             image = ""
             if cover:
                 widths = [int(x) for x in cover.image.widths.split(",")]

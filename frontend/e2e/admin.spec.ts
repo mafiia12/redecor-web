@@ -10,7 +10,7 @@ test.describe("admin", () => {
     await expect(page.getByRole("alert")).toContainText("Incorrect");
   });
 
-  test("draft → preview → publish → visible on the site", async ({ page }) => {
+  test("draft → preview → publish → held by the approval gate", async ({ page }) => {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(ADMIN.email);
     await page.getByLabel("Password").fill(ADMIN.password);
@@ -28,6 +28,9 @@ test.describe("admin", () => {
     await page.getByLabel("Published").check();
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByText("Saved.")).toBeVisible();
-    expect((await page.request.get(slugUrl)).status()).toBe(200);
+    // Published but no client permission on record yet: the approval gate keeps it off the site
+    // (recording the approval is covered in content.spec.ts).
+    expect((await page.request.get(slugUrl)).status()).toBe(404);
+    await expect(page.getByText(/Not visible publicly because/)).toBeVisible();
   });
 });

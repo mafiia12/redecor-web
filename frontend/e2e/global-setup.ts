@@ -12,9 +12,18 @@ export default async function globalSetup(config: FullConfig) {
   const existing = await (await api.get("/api/admin/projects", { headers })).json();
   if (existing.length) return;
   const make = (data: object) => api.post("/api/admin/projects", { headers, data: { country: "eg", published: true, ...data } });
-  await make({ title_en: "E2E Office Fit-out", title_ar: "مكتب اختبار", type: "office", city_en: "New Cairo", year: 2025, tagline_en: "Open-plan offices.", summary_en: "Offices for a test client.", scope_en: "Interior fit-out", sort_order: 1 });
-  await make({ title_en: "E2E Coastal Restaurant", type: "hospitality", city_en: "Hurghada", year: 2024, summary_en: "A restaurant by the sea.", sort_order: 2 });
-  await make({ title_en: "E2E Family Villa", type: "residential", city_en: "Sheikh Zayed", country: "eg", sort_order: 3 });
+  // The approval gate (ENFORCE_APPROVALS, on by default) hides anything without a recorded permission.
+  const approve = async (res: Awaited<ReturnType<typeof make>>) => {
+    const { id } = await res.json();
+    const r = await api.post("/api/admin/approvals", {
+      headers,
+      multipart: { subject_type: "project", subject_id: String(id), approval_type: "client_permission_to_publish", status: "approved", approved_by_name: "Test Approver", evidence_note: "e2e fixture (fake data)" },
+    });
+    if (!r.ok()) throw new Error(`approval fixture failed: ${r.status()} ${await r.text()}`);
+  };
+  await approve(await make({ title_en: "E2E Office Fit-out", title_ar: "مكتب اختبار", type: "office", city_en: "New Cairo", year: 2025, tagline_en: "Open-plan offices.", summary_en: "Offices for a test client.", scope_en: "Interior fit-out", sort_order: 1 }));
+  await approve(await make({ title_en: "E2E Coastal Restaurant", type: "hospitality", city_en: "Hurghada", year: 2024, summary_en: "A restaurant by the sea.", sort_order: 2 }));
+  await approve(await make({ title_en: "E2E Family Villa", type: "residential", city_en: "Sheikh Zayed", country: "eg", sort_order: 3 }));
   await make({ title_en: "E2E Hidden Draft", type: "retail", published: false, sort_order: 4 });
   await make({ title_en: "E2E Test Sample", slug: "test-project-e2e", type: "retail", sort_order: 5 });
   await api.put("/api/admin/offices/eg", {

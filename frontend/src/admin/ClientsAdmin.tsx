@@ -1,10 +1,12 @@
-import { useState, type ChangeEvent } from "react";
+import { Fragment, useState, type ChangeEvent } from "react";
+import { Approvals } from "./Approvals";
 import { api, errorText, form, json, useLoad, type AdminClient } from "./api";
 
 export default function ClientsAdmin() {
   const { data, reload, error } = useLoad<AdminClient[]>("/clients");
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const run = async (fn: () => Promise<unknown>) => {
     setMsg("");
@@ -32,10 +34,11 @@ export default function ClientsAdmin() {
         <span className="caption">Logos: PNG/WebP/JPEG, ideally on a transparent background. They display in grayscale on the site.</span>
       </div>
       <table className="adm-table">
-        <thead><tr><th>Logo</th><th>Name</th><th>Website</th><th>Order</th><th>Visible</th><th></th></tr></thead>
+        <thead><tr><th>Logo</th><th>Name</th><th>Website</th><th>Order</th><th>Published</th><th>On the site</th><th></th></tr></thead>
         <tbody>
           {(data ?? []).map((c) => (
-            <tr key={c.id}>
+            <Fragment key={c.id}>
+            <tr>
               <td style={{ width: 150 }}>
                 {c.logo && <img src={c.logo.src} alt="" style={{ height: 32, maxWidth: 120, objectFit: "contain", display: "block", marginBottom: 6 }} />}
                 <input type="file" accept="image/png,image/jpeg,image/webp" aria-label={`Logo for ${c.name}`} onChange={(e) => logo(c, e)} style={{ width: 130, fontSize: 12 }} />
@@ -44,8 +47,19 @@ export default function ClientsAdmin() {
               <td><input className="input" placeholder="https://…" defaultValue={c.url} onBlur={(e) => e.target.value !== c.url && run(() => api(`/clients/${c.id}`, json("PUT", { ...c, url: e.target.value.trim() })))} /></td>
               <td><input className="input" style={{ width: 70 }} type="number" defaultValue={c.sort_order} onBlur={(e) => Number(e.target.value) !== c.sort_order && run(() => api(`/clients/${c.id}`, json("PUT", { ...c, sort_order: Number(e.target.value) || 0 })))} /></td>
               <td><input type="checkbox" checked={c.published} aria-label="Visible" onChange={(e) => run(() => api(`/clients/${c.id}`, json("PUT", { ...c, published: e.target.checked })))} /></td>
+              <td title={c.block_reasons.join(" · ")}>
+                <span className={`adm-tag ${c.is_public ? "ok" : "warn"}`}>{c.is_public ? "Visible" : "Hidden"}</span>
+                <button className="btn btn--sm btn--outline" style={{ marginInlineStart: 6 }} onClick={() => setOpenId(openId === c.id ? null : c.id)}>Approvals</button>
+              </td>
               <td><button className="btn btn--danger btn--sm" onClick={() => confirm(`Delete ${c.name}?`) && run(() => api(`/clients/${c.id}`, { method: "DELETE" }))}>Delete</button></td>
             </tr>
+            {openId === c.id && (
+              <tr><td colSpan={7}>
+                {!c.is_public && <p className="caption adm-warn">Hidden because: {c.block_reasons.join(" · ")}</p>}
+                <Approvals subjectType="client" subjectId={c.id} onChange={reload} />
+              </td></tr>
+            )}
+            </Fragment>
           ))}
         </tbody>
       </table>

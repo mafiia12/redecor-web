@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, can, errorText, form, json, type AdminImage, type AdminProject, useLoad, useMe } from "./api";
+import { Approvals } from "./Approvals";
+import { api, can, errorText, form, json, multipart, type AdminImage, type AdminProject, useLoad, useMe } from "./api";
 
 export function ProjectsAdmin() {
   const me = useMe();
@@ -87,7 +88,7 @@ export function ProjectsAdmin() {
   );
 }
 
-const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images" | "logo" | "completeness" | "missing" | "is_public"> = {
+const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images" | "logo" | "completeness" | "missing" | "is_public" | "block_reasons" | "images_without_kind"> = {
   title_en: "", title_ar: "", summary_en: "", summary_ar: "", city_en: "", city_ar: "", country: "eg", type: "residential",
   year: null, area_m2: null, scope_en: "", scope_ar: "", tagline_en: "", tagline_ar: "", details_en: "", details_ar: "", story_en: "", story_ar: "", client_name: "", is_render: false, featured: true, published: false, sort_order: 0,
 };
@@ -100,6 +101,8 @@ export function ProjectEdit() {
   const [v, setV] = useState({ ...EMPTY });
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [upKind, setUpKind] = useState<"" | "render" | "executed">("");
+  const [upOverride, setUpOverride] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
@@ -148,13 +151,22 @@ export function ProjectEdit() {
     setBusy(true);
     setMsg(null);
     try {
-      await api(`/projects/${p.id}/images`, form("POST", { files }));
+      await api(`/projects/${p.id}/images`, multipart("POST", { ...(upKind ? { kind: upKind } : {}), override_quality: upOverride }, { files }));
       setP(await api<AdminProject>(`/projects/${p.id}`));
       setMsg({ ok: true, text: `${files.length} photo(s) uploaded.` });
     } catch (x) {
       setMsg({ ok: false, text: errorText(x) });
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function patchCover(img: AdminImage) {
+    try {
+      await api(`/project-images/${img.id}`, json("PATCH", { is_cover: true, override_quality: upOverride }));
+      await refresh();
+    } catch (x) {
+      setMsg({ ok: false, text: errorText(x) });
     }
   }
 
@@ -217,6 +229,9 @@ export function ProjectEdit() {
           {p.missing.length > 0 && <>Still missing: {p.missing.join(", ")}. Photos are optional; a text-only page is fine.</>}
         </p>
       )}
+      {p && p.block_reasons.length > 0 && (
+        <div className="adm-msg err" role="status">Not visible publicly because: {p.block_reasons.join(" · ")}</div>
+      )}
       {msg && <div className={`adm-msg${msg.ok ? "" : " err"}`} role="status">{msg.text}</div>}
 
       <div className="adm-card">
@@ -262,23 +277,44 @@ export function ProjectEdit() {
             <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadLogo} disabled={busy} aria-label="Upload client logo" />
             {p.logo && <button className="btn btn--danger btn--sm" style={{ marginInlineStart: 12 }} onClick={removeLogo}>Remove logo</button>}
           </div>
+          <h2>Approvals</h2>
+          <Approvals subjectType="project" subjectId={p.id} onChange={refresh} />
           <h2>Photos</h2>
           <div className="adm-drop">
-            <p style={{ margin: "0 0 12px" }}>JPEG, PNG or WebP up to 15 MB each. The first photo becomes the cover. Responsive sizes are generated automatically.</p>
+            <p style={{ margin: "0 0 12px" }}>
+              JPEG, PNG or WebP up to 15 MB each, long edge at least 1600 px (2400 px for the cover). The first photo becomes the cover.
+              Every photo must be labelled <b>Render</b> or <b>Executed</b> before the project can be published. Many photos at once: <Link to="/admin/bulk-images">Bulk upload</Link>.
+            </p>
+            <div className="adm-row" style={{ justifyContent: "center", marginBottom: 10 }}>
+              <label className="adm-check">Label for these photos
+                <select className="select" style={{ height: 32 }} value={upKind} onChange={(e) => setUpKind(e.target.value as typeof upKind)}>
+                  <option value="">Choose later</option><option value="executed">Executed (real photo)</option><option value="render">Render (visualization)</option>
+                </select>
+              </label>
+              <label className="adm-check"><input type="checkbox" checked={upOverride} onChange={(e) => setUpOverride(e.target.checked)} /> Accept below standard (recorded with your name)</label>
+            </div>
             <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={upload} disabled={busy} aria-label="Upload photos" />
           </div>
           <div className="adm-imgs" style={{ marginTop: 16 }}>
             {p.images.map((img) => (
-              <div className="adm-img" key={img.id}>
-                <img src={img.image.src} alt="" />
+              <div className={`adm-img${img.kind ? "" : " adm-img--missing"}`} key={img.id}>
+                <FocalPicker img={img} onPick={(x, y) => patch(img, { focal_x: x, focal_y: y })} />
                 <div className="body">
+                  <label className="f">Label (required)
+                    <select className="select" value={img.kind ?? ""} onChange={(e) => e.target.value && patch(img, { kind: e.target.value as "render" | "executed" })} aria-invalid={!img.kind}>
+                      <option value="" disabled>Choose: Render or Executed</option>
+                      <option value="executed">Executed (real photo)</option>
+                      <option value="render">Render (visualization)</option>
+                    </select>
+                  </label>
+                  {img.quality_warnings && <p className="caption adm-warn">⚠ {img.quality_warnings}{img.quality_override_by && ` · accepted by ${img.quality_override_by}`}</p>}
                   <div className="adm-row">
-                    <label className="adm-check"><input type="radio" name="cover" checked={img.is_cover} onChange={() => patch(img, { is_cover: true })} /> Cover</label>
-                    <label className="adm-check"><input type="checkbox" checked={img.is_render} onChange={(e) => patch(img, { is_render: e.target.checked })} /> Render</label>
+                    <label className="adm-check"><input type="radio" name="cover" checked={img.is_cover} onChange={() => patchCover(img)} /> Cover</label>
                     <label className="adm-check"><select className="select" style={{ height: 32 }} value={img.layout} onChange={(e) => patch(img, { layout: e.target.value as "full" | "half" })}><option value="full">Full row</option><option value="half">Half (pairs)</option></select></label>
                     <label className="adm-check"><input type="checkbox" checked={img.full_bleed} onChange={(e) => patch(img, { full_bleed: e.target.checked })} /> Full-bleed</label>
                   </div>
                   <CaptionField img={img} onSave={patch} />
+                  <AltField img={img} onSave={patch} />
                   <div className="adm-row" style={{ justifyContent: "space-between" }}>
                     <label className="adm-check">Order <input className="input" style={{ width: 64, height: 32 }} type="number" defaultValue={img.sort_order} onBlur={(e) => Number(e.target.value) !== img.sort_order && patch(img, { sort_order: Number(e.target.value) || 0 })} /></label>
                     <button className="btn btn--danger btn--sm" onClick={() => del(img)}>Delete</button>
@@ -302,5 +338,37 @@ function CaptionField({ img, onSave }: { img: AdminImage; onSave: (i: AdminImage
       <input className="input" placeholder="Caption (English)" value={en} onChange={(e) => setEn(e.target.value)} onBlur={() => dirty && onSave(img, { caption_en: en, caption_ar: ar })} />
       <input className="input" dir="rtl" placeholder="التعليق (عربي)" value={ar} onChange={(e) => setAr(e.target.value)} onBlur={() => dirty && onSave(img, { caption_en: en, caption_ar: ar })} />
     </>
+  );
+}
+
+function AltField({ img, onSave }: { img: AdminImage; onSave: (i: AdminImage, b: Partial<AdminImage>) => void }) {
+  const [en, setEn] = useState(img.alt_en);
+  const [ar, setAr] = useState(img.alt_ar);
+  const dirty = en !== img.alt_en || ar !== img.alt_ar;
+  return (
+    <>
+      <input className="input" placeholder="Alt text for screen readers (English)" value={en} onChange={(e) => setEn(e.target.value)} onBlur={() => dirty && onSave(img, { alt_en: en, alt_ar: ar })} />
+      <input className="input" dir="rtl" placeholder="Alt text (Arabic)" value={ar} onChange={(e) => setAr(e.target.value)} onBlur={() => dirty && onSave(img, { alt_en: en, alt_ar: ar })} />
+    </>
+  );
+}
+
+/** Click the photo to set the focal point used when cards and covers crop it. */
+function FocalPicker({ img, onPick }: { img: AdminImage; onPick: (x: number, y: number) => void }) {
+  const x = img.focal_x ?? 0.5;
+  const y = img.focal_y ?? 0.5;
+  return (
+    <div
+      className="adm-focal"
+      title="Click to set the focal point (what must stay visible when the photo is cropped)"
+      onClick={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        onPick(Math.round(((e.clientX - r.left) / r.width) * 100) / 100, Math.round(((e.clientY - r.top) / r.height) * 100) / 100);
+      }}
+    >
+      <img src={img.image.src} alt="" style={{ objectPosition: `${x * 100}% ${y * 100}%` }} />
+      <span className="adm-focal__dot" style={{ left: `${x * 100}%`, top: `${y * 100}%` }} aria-hidden="true" />
+      <span className="adm-focal__hint">Focal point {Math.round(x * 100)}% / {Math.round(y * 100)}%</span>
+    </div>
   );
 }

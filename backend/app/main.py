@@ -28,7 +28,7 @@ from .config import settings
 from .db import SessionLocal
 from .models import Enquiry, Project, User
 from .notify import retry_pending
-from .routers import admin, admin_system, public
+from .routers import admin, admin_content, admin_system, public
 from .security import current_user, password_problems
 from .seed import seed
 from .visibility import public_projects
@@ -135,11 +135,66 @@ _SMALL = 256 * 1024  # JSON
 
 
 def _body_limit(path: str) -> int:
-    if path.endswith("/images"):
+    if path.endswith("/images") or path.startswith("/api/admin/bulk-images/"):
         return _BIG
-    if path.endswith("/logo") or "/site-images/" in path or "/documents/" in path:
+    if path == "/api/enquiries/with-files":
+        return (settings.attach_max_total_mb + 1) * 1024 * 1024  # attachments + form fields
+    if path.endswith("/logo") or "/site-images/" in path or "/documents/" in path or path.startswith(("/api/admin/import", "/api/admin/approvals")):
         return _MEDIUM
     return _SMALL
+
+
+class _TooLarge(Exception):
+    pass
+
+
+class BodyLimit:
+    """Pure ASGI guard: rejects a body bigger than its route's ceiling, from Content-Length up front AND while
+    streaming (chunked uploads), so an oversized upload is aborted without being buffered."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] not in ("POST", "PUT", "PATCH"):
+            return await self.app(scope, receive, send)
+        limit = _body_limit(scope["path"])
+        length = dict(scope["headers"]).get(b"content-length", b"")
+        if length.isdigit() and int(length) > limit:
+            return await self._reject(send)
+        seen = 0
+        started = False
+
+        async def counted_receive():
+            nonlocal seen
+            msg = await receive()
+            if msg["type"] == "http.request":
+                seen += len(msg.get("body", b""))
+                if seen > limit:
+                    raise _TooLarge
+            return msg
+
+        async def tracked_send(msg):
+            nonlocal started
+            if msg["type"] == "http.response.start":
+                started = True
+            await send(msg)
+
+        try:
+            await self.app(scope, counted_receive, tracked_send)
+        except _TooLarge:
+            if not started:
+                await self._reject(send)
+
+    @staticmethod
+    async def _reject(send):
+        body = b'{"detail":"Request body too large"}'
+        await send({"type": "http.response.start", "status": 413,
+                    "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+        await send({"type": "http.response.body", "body": body})
+
+
+app.add_middleware(BodyLimit)
 
 
 REDIRECTS: dict[str, str] = {}
@@ -169,10 +224,6 @@ CSP = (
 @app.middleware("http")
 async def guard(request: Request, call_next):
     request.state.request_id = uuid.uuid4().hex[:12]
-    if request.method in ("POST", "PUT", "PATCH"):
-        length = request.headers.get("content-length")
-        if length and length.isdigit() and int(length) > _body_limit(request.url.path):
-            return JSONResponse({"detail": "Request body too large"}, status_code=413)
     target = REDIRECTS.get(request.url.path.rstrip("/") or "/")
     if target and request.method in ("GET", "HEAD"):
         resp = RedirectResponse(target, status_code=301)
@@ -207,6 +258,7 @@ class ImmutableStatic(StaticFiles):
 app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(admin_system.router)
+app.include_router(admin_content.router)
 
 
 @app.get("/robots.txt", include_in_schema=False)

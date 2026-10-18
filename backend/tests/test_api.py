@@ -73,7 +73,7 @@ def test_project_crud_and_images(client, auth):
     pid = p["id"]
 
     files = [("files", ("a.png", make_png(), "image/png")), ("files", ("b.png", make_png(800, 1000), "image/png"))]
-    up = client.post(f"/api/admin/projects/{pid}/images", headers=auth, files=files)
+    up = client.post(f"/api/admin/projects/{pid}/images", headers=auth, files=files, data={"kind": "executed"})
     assert up.status_code == 201
     imgs = up.json()
     assert imgs[0]["is_cover"] and not imgs[1]["is_cover"]
@@ -149,8 +149,8 @@ def test_standalone_project_page_fields(client, auth):
     )
     assert r.status_code == 201
     pid = r.json()["id"]
-    files = [("files", ("a.png", make_png(), "image/png")), ("files", ("b.png", make_png(), "image/png"))]
-    imgs = client.post(f"/api/admin/projects/{pid}/images", headers=auth, files=files).json()
+    files = [("files", ("a.png", make_png(), "image/png")), ("files", ("b.png", make_png(color=(10, 20, 30)), "image/png"))]
+    imgs = client.post(f"/api/admin/projects/{pid}/images", headers=auth, files=files, data={"kind": "render"}).json()
     assert imgs[0]["layout"] == "full"
     assert client.patch(f"/api/admin/project-images/{imgs[1]['id']}", headers=auth, json={"layout": "half"}).status_code == 200
     assert client.patch(f"/api/admin/project-images/{imgs[1]['id']}", headers=auth, json={"layout": "bogus"}).status_code == 422

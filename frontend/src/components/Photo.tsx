@@ -41,6 +41,7 @@ export function Photo({ img, alt = "", ratio = "4/3", radius = 0, dark, priority
           width={img.width}
           height={img.height}
           alt={alt}
+          style={img.fx != null && img.fy != null ? { objectPosition: `${img.fx * 100}% ${img.fy * 100}%` } : undefined}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           // @ts-expect-error fetchpriority is valid HTML but missing from React 18 typings

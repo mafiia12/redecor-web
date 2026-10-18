@@ -4,6 +4,9 @@ export interface Img {
   width: number;
   height: number;
   color: string;
+  /** Focal point (0..1) chosen in the admin; used as object-position when the photo is cropped. */
+  fx?: number;
+  fy?: number;
 }
 export type Country = "eg" | "qa" | "sa";
 export type ProjectType = "residential" | "hospitality" | "retail" | "office" | "industrial" | "healthcare" | "public" | "education" | "landscape";
@@ -36,6 +39,9 @@ export interface GalleryImage {
   caption_ar: string;
   sort_order: number;
   image: Img;
+  kind?: "render" | "executed" | null;
+  alt_en?: string;
+  alt_ar?: string;
 }
 export interface ProjectDetail extends ProjectCard {
   summary_en: string;

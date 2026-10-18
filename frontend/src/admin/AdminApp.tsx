@@ -3,6 +3,7 @@ import { Navigate, NavLink, Outlet, Route, Routes, useNavigate } from "react-rou
 import { api, can, errorText, getToken, json, MeContext, setToken, type Me } from "./api";
 import { AccountAdmin, DocumentsAdmin, SystemAdmin, TestimonialsAdmin, UsersAdmin } from "./SystemAdmin";
 import ProjectPreview from "./ProjectPreview";
+import { BulkImagesAdmin, ReadinessAdmin } from "./ContentTools";
 import ClientsAdmin from "./ClientsAdmin";
 import EnquiriesAdmin from "./EnquiriesAdmin";
 import OfficesAdmin from "./OfficesAdmin";
@@ -74,6 +75,8 @@ function Shell() {
       <aside className="adm-side">
         <img src="/logo-light.svg" alt="RE DECOR & MORE" />
         <NavLink to="/admin/projects" className={link}>Projects</NavLink>
+        <NavLink to="/admin/readiness" className={link}>Readiness</NavLink>
+        {can(me, "editor") && <NavLink to="/admin/bulk-images" className={link}>Bulk photo upload</NavLink>}
         <NavLink to="/admin/clients" className={link}>Clients</NavLink>
         <NavLink to="/admin/images" className={link}>Site images</NavLink>
         <NavLink to="/admin/documents" className={link}>Documents</NavLink>
@@ -110,6 +113,8 @@ export default function AdminApp() {
         <Route path="enquiries" element={<EnquiriesAdmin />} />
         <Route path="projects/:id/preview" element={<ProjectPreview />} />
         <Route path="documents" element={<DocumentsAdmin />} />
+        <Route path="readiness" element={<ReadinessAdmin />} />
+        <Route path="bulk-images" element={<BulkImagesAdmin />} />
         <Route path="testimonials" element={<TestimonialsAdmin />} />
         <Route path="system" element={<SystemAdmin />} />
         <Route path="users" element={<UsersAdmin />} />

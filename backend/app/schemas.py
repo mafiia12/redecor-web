@@ -21,6 +21,8 @@ class ImageOut(BaseModel):
     width: int
     height: int
     color: str
+    fx: float = 0.5  # focal point (0..1) used for object-position when the image is cropped
+    fy: float = 0.5
 
 
 def image_out(img: Image | None) -> ImageOut | None:
@@ -47,6 +49,18 @@ class ProjectImageOut(BaseModel):
     caption_ar: str
     sort_order: int
     image: ImageOut
+    kind: str | None = None  # render | executed (None = not set: hidden publicly)
+    alt_en: str = ""
+    alt_ar: str = ""
+
+
+class ProjectImageAdminOut(ProjectImageOut):
+    """Admin-only extras (who overrode the quality check is never sent to the public API)."""
+
+    focal_x: float | None = None
+    focal_y: float | None = None
+    quality_warnings: str = ""
+    quality_override_by: str = ""
 
 
 class ProjectCardOut(BaseModel):
@@ -273,7 +287,9 @@ class ProjectAdminOut(ProjectIn):
     completeness: int = 0  # % of the recommended fields that are filled in
     missing: list[str] = []
     is_public: bool = False  # true when the public site shows it right now
-    images: list[ProjectImageOut]
+    block_reasons: list[str] = []
+    images_without_kind: int = 0
+    images: list[ProjectImageAdminOut]
 
 
 class ProjectImagePatch(BaseModel):
@@ -284,6 +300,12 @@ class ProjectImagePatch(BaseModel):
     caption_en: str | None = Field(default=None, max_length=300)
     caption_ar: str | None = Field(default=None, max_length=300)
     sort_order: int | None = None
+    kind: Literal["render", "executed"] | None = None
+    alt_en: str | None = Field(default=None, max_length=300)
+    alt_ar: str | None = Field(default=None, max_length=300)
+    focal_x: float | None = Field(default=None, ge=0, le=1)
+    focal_y: float | None = Field(default=None, ge=0, le=1)
+    override_quality: bool = False  # accept a below-threshold image as cover (recorded with user and time)
 
 
 class ClientIn(BaseModel):
@@ -296,6 +318,9 @@ class ClientIn(BaseModel):
 class ClientAdminOut(ClientIn):
     id: int
     logo: ImageOut | None
+    approval_status: str = "none"
+    is_public: bool = False
+    block_reasons: list[str] = []
 
 
 class OfficeIn(BaseModel):

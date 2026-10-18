@@ -229,6 +229,7 @@ def test_production_guard(monkeypatch):
     monkeypatch.setattr(settings, "site_url", "https://redecorgroup.com")
     monkeypatch.setattr(settings, "seed_demo", False)
     monkeypatch.setattr(settings, "admin_password", "correct-horse-battery")
+    monkeypatch.setattr(settings, "enforce_approvals", True)
     app_main.check_production()  # passes
 
 

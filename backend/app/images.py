@@ -1,3 +1,4 @@
+import hashlib
 import io
 import shutil
 import uuid
@@ -24,6 +25,44 @@ def image_dir(key: str) -> Path:
 def process_upload(db: Session, file: UploadFile, max_width: int = 2400) -> Image:
     """Validate, auto-rotate, strip metadata and write responsive WebP variants."""
     raw = file.file.read(settings.max_upload_bytes + 1)
+    return process_bytes(db, raw, max_width)
+
+
+def sha256_of(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def probe(raw: bytes) -> tuple[int, int]:
+    """Real format + orientation-corrected size, without decoding the whole image twice. Raises HTTPException."""
+    try:
+        im = PILImage.open(io.BytesIO(raw))
+        if im.format not in ALLOWED:
+            raise HTTPException(415, "Use a JPEG, PNG or WebP image.")
+        w, h = im.size
+        if (im.getexif() or {}).get(0x0112) in (5, 6, 7, 8):  # rotated 90/270 degrees by EXIF orientation
+            w, h = h, w
+        return w, h
+    except HTTPException:
+        raise
+    except (UnidentifiedImageError, OSError, PILImage.DecompressionBombError):
+        raise HTTPException(400, "The file is not a valid image.") from None
+
+
+def quality_problems(w: int, h: int, cover: bool = False) -> list[str]:
+    """Reasons a project photo is below the publishing standard (empty list = fine)."""
+    problems = []
+    need = settings.image_min_cover_long_edge if cover else settings.image_min_long_edge
+    if max(w, h) < need:
+        problems.append(f"{'cover ' if cover else ''}image too small: long edge {max(w, h)} px, minimum {need} px")
+    ratio = w / h
+    if ratio > settings.image_aspect_max:
+        problems.append(f"too wide (panorama) {ratio:.2f}:1, maximum {settings.image_aspect_max}:1")
+    if ratio < settings.image_aspect_min:
+        problems.append(f"too tall {ratio:.2f}:1, minimum {settings.image_aspect_min}:1")
+    return problems
+
+
+def process_bytes(db: Session, raw: bytes, max_width: int = 2400) -> Image:
     if len(raw) > settings.max_upload_bytes:
         raise HTTPException(413, "Image is larger than 15 MB.")
     try:
@@ -54,12 +93,14 @@ def process_upload(db: Session, file: UploadFile, max_width: int = 2400) -> Imag
     try:
         for tw in widths:
             variant = img if tw == w else img.resize((tw, round(h * tw / w)), PILImage.Resampling.LANCZOS)
-            variant.save(folder / f"{tw}.webp", "WEBP", quality=82, method=4)
+            variant.info.pop("exif", None)  # never carry EXIF (GPS, camera, owner) into public files
+            variant.save(folder / f"{tw}.webp", "WEBP", quality=82, method=4, exif=b"", xmp=b"")
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
         raise HTTPException(400, "Could not process the image.") from None
 
-    rec = Image(key=key, width=cap, height=round(h * cap / w), widths=",".join(map(str, widths)), color=color)
+    rec = Image(key=key, width=cap, height=round(h * cap / w), widths=",".join(map(str, widths)), color=color,
+                sha256=sha256_of(raw))
     db.add(rec)
     db.flush()
     return rec

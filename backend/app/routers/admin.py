@@ -1,13 +1,15 @@
 import re
+from datetime import datetime, timezone
+from typing import Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, object_session, selectinload
 
 from ..config import settings
 from ..db import get_db
-from ..images import delete_if_orphan, process_upload
-from ..models import AuditLog, Client, Enquiry, Office, Project, ProjectImage, SiteImage, User
+from ..images import delete_if_orphan, probe, process_bytes, process_upload, quality_problems, sha256_of
+from ..models import Approval, AuditLog, Client, Enquiry, Office, Project, ProjectImage, SiteImage, User
 from ..notify import deliver
 from ..schemas import (
     ClientAdminOut,
@@ -21,7 +23,7 @@ from ..schemas import (
     PasswordChangeIn,
     ProjectAdminOut,
     ProjectDetailOut,
-    ProjectImageOut,
+    ProjectImageAdminOut,
     ProjectImagePatch,
     ProjectIn,
     SiteImageAltIn,
@@ -41,7 +43,7 @@ from ..security import (
 )
 from ..serializers import cover_of, project_image_out
 from ..slots import SLOT_KEYS, SLOTS
-from ..visibility import TEST_SLUG_PREFIX, is_placeholder
+from ..visibility import REQUIRED_APPROVAL, TEST_SLUG_PREFIX, is_placeholder
 from .public import project_payload
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -122,12 +124,30 @@ def completeness(p: Project) -> tuple[int, list[str]]:
     return round(100 * (len(_CHECKS) - len(missing)) / len(_CHECKS)), missing
 
 
+def _approval(db: Session, subject_type: str, sid: int) -> str:
+    a = db.scalar(select(Approval).where(Approval.subject_type == subject_type, Approval.subject_id == sid,
+                                        Approval.approval_type == REQUIRED_APPROVAL[subject_type])
+                  .order_by(Approval.id.desc()).limit(1))
+    return a.status if a else "none"
+
+
+def _block_reasons(p: Project) -> list[str]:
+    """Why the public cannot see this project right now (empty list = it is visible)."""
+    reasons = []
+    if not p.published:
+        reasons.append("Draft (not published)")
+    if is_placeholder(p.title_en):
+        reasons.append("Title still contains [placeholder] text")
+    if not settings.allow_test_content and p.slug.startswith(TEST_SLUG_PREFIX):
+        reasons.append("Test project (test-project-*)")
+    db = object_session(p)
+    if settings.enforce_approvals and db is not None and _approval(db, "project", p.id) != "approved":
+        reasons.append("No approved 'client permission to publish' on record (Approvals)")
+    return reasons
+
+
 def _is_public(p: Project) -> bool:
-    return bool(
-        p.published
-        and not is_placeholder(p.title_en)
-        and (settings.allow_test_content or not p.slug.startswith(TEST_SLUG_PREFIX))
-    )
+    return not _block_reasons(p)
 
 
 def _project_out(p: Project) -> ProjectAdminOut:
@@ -138,10 +158,12 @@ def _project_out(p: Project) -> ProjectAdminOut:
         id=p.id,
         logo=image_out(p.logo),
         cover=image_out(cover.image) if cover else None,
-        images=[project_image_out(i) for i in p.images],
+        images=[project_image_out(i, admin=True) for i in p.images],
         completeness=score,
         missing=missing,
-        is_public=_is_public(p),
+        is_public=not (reasons := _block_reasons(p)),
+        block_reasons=reasons,
+        images_without_kind=sum(i.kind not in ("render", "executed") for i in p.images),
     )
 
 
@@ -191,6 +213,8 @@ def create_project(data: ProjectIn, db: Session = Depends(get_db), user: User = 
 def update_project(pid: int, data: ProjectIn, db: Session = Depends(get_db), user: User = Depends(editor)):
     p = _get_project(db, pid)
     _publish_guard(data)
+    if data.published and any(i.kind not in ("render", "executed") for i in p.images):
+        raise HTTPException(422, "Every photo needs a label (Render or Executed) before the project can be published.")
     values = data.model_dump()
     values["slug"] = unique_slug(db, slugify(data.slug or p.slug), exclude_id=p.id)
     for k, v in values.items():
@@ -226,36 +250,76 @@ def delete_project(pid: int, db: Session = Depends(get_db), user: User = Depends
     db.flush()
     for iid in image_ids:
         delete_if_orphan(db, iid)
+    close_approvals(db, "project", pid, user)
     audit(db, user, "delete", "project", pid)
     db.commit()
 
 
-@router.post("/projects/{pid}/images", response_model=list[ProjectImageOut], status_code=201)
+def close_approvals(db: Session, subject_type: str, sid: int, user: User) -> None:
+    """A deleted item's approvals must not pass to a new item that later gets the same id (SQLite reuses ids):
+    append a 'revoked' row for every approval type on record. Nothing is edited or removed."""
+    types = db.scalars(select(Approval.approval_type).where(Approval.subject_type == subject_type,
+                                                            Approval.subject_id == sid).distinct()).all()
+    for t in types:
+        db.add(Approval(subject_type=subject_type, subject_id=sid, approval_type=t, status="revoked",
+                        evidence_note=f"{subject_type} deleted", recorded_by=user.email))
+
+
+def add_project_image(db: Session, p: Project, raw: bytes, user: User, *, kind: str | None = None,
+                      order: int | None = None, cover: bool | None = None, alt_en: str = "", alt_ar: str = "",
+                      override: bool = False) -> ProjectImage | None:
+    """The single entry point for project photos (admin upload, bulk upload). Quality-checked and de-duplicated.
+    Returns None when the same file is already attached to the project."""
+    digest = sha256_of(raw)
+    if any(i.image.sha256 == digest for i in p.images):
+        return None
+    w, h = probe(raw)
+    is_cover = (not p.images) if cover is None else cover
+    problems = quality_problems(w, h, cover=is_cover)
+    if problems and not override:
+        raise HTTPException(422, "Image rejected: " + "; ".join(problems) + ". Tick “accept below standard” to keep it anyway.")
+    img = process_bytes(db, raw)
+    if is_cover:
+        for other in p.images:
+            other.is_cover = False
+    pi = ProjectImage(
+        project_id=p.id, image_id=img.id, is_cover=is_cover,
+        sort_order=order if order is not None else max([i.sort_order for i in p.images], default=-1) + 1,
+        kind=kind, is_render=kind == "render", alt_en=alt_en, alt_ar=alt_ar,
+    )
+    if problems:
+        pi.quality_warnings = "; ".join(problems)[:300]
+        pi.quality_override_by, pi.quality_override_at = user.email, datetime.now(timezone.utc)
+    db.add(pi)
+    db.flush()
+    p.images.append(pi)
+    return pi
+
+
+@router.post("/projects/{pid}/images", response_model=list[ProjectImageAdminOut], status_code=201)
 def upload_project_images(
     pid: int,
     files: list[UploadFile] = File(...),
+    kind: Literal["render", "executed"] | None = Form(None),
+    override_quality: bool = Form(False),
     db: Session = Depends(get_db),
     user: User = Depends(editor),
 ):
     if len(files) > 20:
         raise HTTPException(400, "Upload at most 20 images at a time.")
     p = _get_project(db, pid)
-    next_order = max([i.sort_order for i in p.images], default=-1) + 1
     created: list[ProjectImage] = []
     for f in files:
-        img = process_upload(db, f)
-        pi = ProjectImage(
-            project_id=p.id,
-            image_id=img.id,
-            is_cover=not p.images and not created,  # first image becomes the cover
-            sort_order=next_order + len(created),
-        )
-        db.add(pi)
-        created.append(pi)
+        raw = f.file.read(settings.max_upload_bytes + 1)
+        pi = add_project_image(db, p, raw, user, kind=kind, override=override_quality)
+        if pi:
+            created.append(pi)
+    if not created and files:
+        raise HTTPException(409, "These images are already attached to this project (duplicates skipped).")
     db.flush()
     audit(db, user, "upload", "project_image", pid)
     db.commit()
-    return [project_image_out(db.get(ProjectImage, c.id)) for c in created]
+    return [project_image_out(db.get(ProjectImage, c.id), admin=True) for c in created]
 
 
 @router.post("/projects/{pid}/logo", response_model=ProjectAdminOut)
@@ -285,7 +349,7 @@ def delete_project_logo(pid: int, db: Session = Depends(get_db), user: User = De
     db.commit()
 
 
-@router.patch("/project-images/{iid}", response_model=ProjectImageOut)
+@router.patch("/project-images/{iid}", response_model=ProjectImageAdminOut)
 def patch_project_image(
     iid: int, data: ProjectImagePatch, db: Session = Depends(get_db), user: User = Depends(editor)
 ):
@@ -293,6 +357,16 @@ def patch_project_image(
     if not pi:
         raise HTTPException(404, "Image not found")
     changes = data.model_dump(exclude_unset=True)
+    override = changes.pop("override_quality", False)
+    if "kind" in changes:
+        changes["is_render"] = changes["kind"] == "render"
+    if changes.get("is_cover"):
+        problems = quality_problems(pi.image.width, pi.image.height, cover=True)
+        if problems and not (override or pi.quality_override_by):
+            raise HTTPException(422, "Not suitable as cover: " + "; ".join(problems) + ". Tick “accept below standard” to use it anyway.")
+        if problems:
+            pi.quality_warnings = "; ".join(problems)[:300]
+            pi.quality_override_by, pi.quality_override_at = user.email, datetime.now(timezone.utc)
     if changes.get("is_cover"):  # only one cover per project
         for other in db.scalars(select(ProjectImage).where(ProjectImage.project_id == pi.project_id)):
             other.is_cover = False
@@ -300,7 +374,7 @@ def patch_project_image(
         setattr(pi, k, v)
     audit(db, user, "update", "project_image", iid)
     db.commit()
-    return project_image_out(pi)
+    return project_image_out(pi, admin=True)
 
 
 @router.delete("/project-images/{iid}", status_code=204)
@@ -324,8 +398,18 @@ def delete_project_image(iid: int, db: Session = Depends(get_db), user: User = D
 
 # ---------- clients ----------
 def _client_out(c: Client) -> ClientAdminOut:
+    db = object_session(c)
+    status = _approval(db, "client", c.id) if db is not None else "none"
+    reasons = []
+    if not c.published:
+        reasons.append("Not published")
+    if c.logo_image_id is None:
+        reasons.append("No logo uploaded")
+    if settings.enforce_approvals and status != "approved":
+        reasons.append("No approved 'logo usage permission' on record (Approvals)")
     return ClientAdminOut(
-        id=c.id, name=c.name, url=c.url, published=c.published, sort_order=c.sort_order, logo=image_out(c.logo)
+        id=c.id, name=c.name, url=c.url, published=c.published, sort_order=c.sort_order, logo=image_out(c.logo),
+        approval_status=status, is_public=not reasons, block_reasons=reasons,
     )
 
 
@@ -383,6 +467,7 @@ def delete_client(cid: int, db: Session = Depends(get_db), user: User = Depends(
     db.delete(c)
     db.flush()
     delete_if_orphan(db, old)
+    close_approvals(db, "client", cid, user)
     audit(db, user, "delete", "client", cid)
     db.commit()
 

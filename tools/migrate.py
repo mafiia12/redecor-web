@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 def full_backup(out_dir: str) -> Path:
     import backup as bk
+
     from app.config import settings
 
     db = settings.database_url.split("sqlite:///", 1)[1] if settings.database_url.startswith("sqlite") else settings.database_url

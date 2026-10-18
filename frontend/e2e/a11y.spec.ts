@@ -26,15 +26,24 @@ test("lightbox: keyboard navigation and focus return (fixture photo in the throw
   const { token } = await (await request.post("/api/admin/login", { data: ADMIN })).json();
   const headers = { Authorization: `Bearer ${token}` };
   const project = await (await request.post("/api/admin/projects", { headers, data: { title_en: "E2E Lightbox Fixture", country: "eg", type: "office", published: true } })).json();
-  const png = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAUUlEQVR4nO3PQQ0AIBDAMEDm+ReCCB4Nyapg2zOzfnZ0wKsGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0CxhXAW7GSF1HAAAAAElFTkSuQmCC",
-    "base64",
-  );
-  const files = [1, 2].map((n) => ({ name: `fixture-${n}.png`, mimeType: "image/png", buffer: png }));
+  // Two distinct flat-colour PNGs (identical files would be skipped as duplicates).
+  const png = async (color: string) => {
+    await page.setContent(`<body style="margin:0;background:${color}"></body>`);
+    return page.screenshot({ type: "png", clip: { x: 0, y: 0, width: 64, height: 48 } });
+  };
+  const files = [
+    { name: "fixture-1.png", mimeType: "image/png", buffer: await png("#7a5c3e") },
+    { name: "fixture-2.png", mimeType: "image/png", buffer: await png("#3e5c7a") },
+  ];
   for (const f of files) {
-    const up = await request.post(`/api/admin/projects/${project.id}/images`, { headers, multipart: { files: f } });
+    const up = await request.post(`/api/admin/projects/${project.id}/images`, { headers, multipart: { files: f, kind: "executed", override_quality: "true" } });
     expect(up.status(), await up.text()).toBe(201);
   }
+  // The approval gate is on: record the (fake) client permission so the fixture is public.
+  await request.post("/api/admin/approvals", {
+    headers,
+    multipart: { subject_type: "project", subject_id: String(project.id), approval_type: "client_permission_to_publish", status: "approved", approved_by_name: "Test Approver", evidence_note: "e2e fixture" },
+  });
   await page.goto(`/projects/${project.slug}`);
   const opener = page.locator(".case__zoom").first();
   await opener.click();
