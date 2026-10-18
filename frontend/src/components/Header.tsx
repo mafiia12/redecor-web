@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { useLang } from "../lib/context";
+import { THEME } from "../config";
+import { useData, useLang } from "../lib/context";
+import type { ProjectType } from "../lib/api";
 
 export function Header() {
   const { t, lp, altPath, lang } = useLang();
+  const { data } = useData();
+  const present = (["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public", "education", "landscape"] as ProjectType[]).filter((x) => data?.projects.some((p) => p.type === x));
   const { pathname } = useLocation();
   const [dark, setDark] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -65,7 +69,7 @@ export function Header() {
   ];
   const bare = lang === "ar" ? pathname.replace(/^\/ar/, "") : pathname;
   const isActive = (m: string) => !m.startsWith("#") && bare.startsWith(m);
-  const theme = dark && !open ? "dark" : "light";
+  const theme = (THEME === "dark" || dark) && !open ? "dark" : "light";
 
   return (
     <header ref={ref} className="header" data-theme={theme} data-hidden={hidden && !open}>
@@ -74,11 +78,25 @@ export function Header() {
           <img src={theme === "dark" ? "/logo-light.svg" : "/logo-ink.svg"} alt={t.brand} width={48} height={28} />
         </Link>
         <nav className="header__nav" aria-label="Main">
-          {links.map((l) => (
-            <Link key={l.to} to={l.to} aria-current={isActive(l.match) ? "page" : undefined}>
-              {l.label}
-            </Link>
-          ))}
+          {links.map((l) =>
+            l.match === "/projects" && present.length > 1 ? (
+              <div className="dd" key={l.to}>
+                <Link to={l.to} aria-current={isActive(l.match) ? "page" : undefined} aria-haspopup="true">
+                  {l.label}
+                </Link>
+                <div className="dd__menu">
+                  <Link to={l.to}>{t.filters.all}</Link>
+                  {present.map((x) => (
+                    <Link key={x} to={`${l.to}?type=${x}`}>{t.types[x]}</Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link key={l.to} to={l.to} aria-current={isActive(l.match) ? "page" : undefined}>
+                {l.label}
+              </Link>
+            ),
+          )}
         </nav>
         <div className="header__actions">
           <Link to={altPath} className="header__lang" hrefLang={lang === "ar" ? "en" : "ar"} lang={lang === "ar" ? "en" : "ar"}>
@@ -107,6 +125,13 @@ export function Header() {
               {l.label}
             </NavLink>
           ))}
+          {present.length > 1 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", padding: "4px 0 8px" }}>
+              {present.map((x) => (
+                <Link key={x} to={`${lp("/projects")}?type=${x}`} style={{ color: "var(--muted)", fontSize: 16 }}>{t.types[x]}</Link>
+              ))}
+            </div>
+          )}
           <div className="menu-foot">
             <Link to={lp("/contact")} className="btn">
               {t.cta}

@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
-import { ProjectCard, ProjectGridSkeleton } from "../components/Cards";
+import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
+import { WorkHero } from "../components/WorkHero";
 import { Segmented } from "../components/Filters";
 import { useData, useLang, usePageMeta } from "../lib/context";
 import type { Country, ProjectType } from "../lib/api";
@@ -34,15 +35,10 @@ export default function Projects() {
 
   return (
     <>
-      <section className="page-head">
-        <div className="container">
-          <h1 className="display">{t.projects.title}</h1>
-          <p className="lead">{t.projects.description}</p>
-        </div>
-      </section>
-      <section className="section section--tight-top" style={{ paddingBottom: "var(--section-y)" }}>
-        <div className="container">
-          <div className="filters" style={{ marginBottom: 48 }}>
+      <WorkHero title={t.home.workTitle} sub={t.projects.description} bg={data?.site_images["projects-hero"]?.image ?? all.find((p) => p.cover)?.cover} target="work-grid" />
+      <section className="section" id="work-grid" style={{ paddingBlock: "56px 96px" }}>
+        <div className="container container--wide">
+          <div className="filters" style={{ marginBottom: 32 }}>
             <Segmented
               label={t.filters.country}
               value={country}
@@ -72,9 +68,9 @@ export default function Projects() {
               <button className="btn btn--outline" onClick={() => setParams({}, { replace: true })}>{t.projects.clear}</button>
             </div>
           ) : (
-            <div className="grid grid--3">
+            <div className="mosaic">
               {list.map((p) => (
-                <ProjectCard key={p.id} p={p} />
+                <ProjectTile key={p.id} p={p} />
               ))}
             </div>
           )}

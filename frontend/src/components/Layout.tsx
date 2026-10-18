@@ -4,6 +4,7 @@ import { useLang } from "../lib/context";
 import { CtaBand } from "./CtaBand";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
+import { ScrollTop } from "./ScrollTop";
 import { WhatsApp } from "./WhatsApp";
 
 /** Scroll to top on navigation (or to the #anchor when there is one). */
@@ -37,6 +38,7 @@ export function Layout({ cta = true }: { cta?: boolean }) {
         {cta && <CtaBand />}
       </main>
       <Footer />
+      <ScrollTop />
       <WhatsApp />
     </>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ProjectCard } from "../components/Cards";
+import { ProjectTile } from "../components/Cards";
 import { Photo } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
 import { ApiError, getProject, type GalleryImage, type ProjectDetail as Detail } from "../lib/api";
@@ -122,9 +122,9 @@ export default function ProjectDetail() {
               <h2 className="h2">{t.projects.related}</h2>
               <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
             </Reveal>
-            <div className="grid grid--3">
+            <div className="mosaic">
               {p.related.map((r) => (
-                <ProjectCard key={r.id} p={r} />
+                <ProjectTile key={r.id} p={r} />
               ))}
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 SLOTS: list[tuple[str, str]] = [
     ("home-hero", "Home: hero (landscape, full-bleed)"),
+    ("projects-hero", "Projects page: dark background photo behind the title (optional; defaults to a project cover)"),
     ("service-contracting", "Service tile: Contracting"),
     ("service-fitout", "Service tile: Interior Fit-Out"),
     ("service-supply", "Service tile: Procurement & Supply"),

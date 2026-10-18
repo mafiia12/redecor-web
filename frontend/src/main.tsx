@@ -11,8 +11,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import { THEME } from "./config";
 import { loadBootstrap } from "./lib/api";
 import "./styles.css";
+
+document.documentElement.dataset.theme = THEME;
+document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME === "dark" ? "#0a0a0b" : "#fafaf8");
 
 // Start fetching site data immediately; React does not need to mount first.
 if (!location.pathname.startsWith("/admin")) loadBootstrap().catch(() => undefined);

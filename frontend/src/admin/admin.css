@@ -1,3 +1,4 @@
+.adm { --bg: #fafaf8; --surface: #f2f1ee; --ink: #1c1c1e; --muted: #6e6e73; --line: #d2d0cb; --ph: #e4e1db; --accent: #1c1c1e; --accent-hover: #000; --on-accent: #fff; --field: #fff; --error: #b3261e; --seg-hover: rgba(0,0,0,.05); color-scheme: light; }
 .adm { min-height: 100vh; background: #f6f5f2; color: var(--ink); font-size: 15px; line-height: 1.5; }
 .adm * { letter-spacing: 0; }
 .adm-login { min-height: 100vh; display: grid; place-items: center; padding: 24px; }

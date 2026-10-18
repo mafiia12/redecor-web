@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { ProjectCard } from "../components/Cards";
+import { ProjectTile } from "../components/Cards";
 import { SitePhoto } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
 import { services } from "../i18n";
@@ -75,9 +75,9 @@ export default function ServiceDetail() {
               </div>
               <Link to={lp("/projects")} className="link">{t.home.allProjects}</Link>
             </Reveal>
-            <div className="grid grid--3">
+            <div className="mosaic">
               {related.map((p) => (
-                <ProjectCard key={p.id} p={p} />
+                <ProjectTile key={p.id} p={p} />
               ))}
             </div>
           </div>

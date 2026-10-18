@@ -5,3 +5,6 @@ export const SOCIAL: Record<"LinkedIn" | "Facebook" | "Instagram" | "TikTok", st
   Instagram: "https://www.instagram.com/redecor.egy",
   TikTok: "https://www.tiktok.com/@redecor.egy",
 };
+
+/** "dark" (default) or "light". One line to compare both looks. */
+export const THEME: "dark" | "light" = "dark";

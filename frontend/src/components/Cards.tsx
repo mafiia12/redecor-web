@@ -46,3 +46,20 @@ export function ServiceTile({ to, title, text, slot, hint }: { to: string; title
     </Link>
   );
 }
+
+/** Dense mosaic tile: image only, title and year appear on hover (always visible on touch screens). */
+export function ProjectTile({ p }: { p: ProjectCardData }) {
+  const { lang, t, lp } = useLang();
+  const title = pick(p, "title", lang);
+  const meta = [p.year, pick(p, "city", lang), t.types[p.type]].filter(Boolean)[0] ?? t.types[p.type];
+  return (
+    <Link to={lp(`/projects/${p.slug}`)} className="tile" aria-label={title}>
+      <Photo img={p.cover} alt={title} ratio="5/4" sizes="(min-width:1100px) 25vw, (min-width:700px) 33vw, 50vw" />
+      {p.is_render && <span className="badge">{t.projects.render}</span>}
+      <span className="tile__veil">
+        <b>{title}</b>
+        <span>{meta}</span>
+      </span>
+    </Link>
+  );
+}

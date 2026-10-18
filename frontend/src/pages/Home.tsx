@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ProjectCard, ProjectGridSkeleton, ServiceTile } from "../components/Cards";
+import { ProjectGridSkeleton, ProjectTile, ServiceTile } from "../components/Cards";
 import { Segmented } from "../components/Filters";
 import { ClientWall } from "../components/ClientWall";
 import { HowWeWork } from "../components/HowWeWork";
@@ -108,9 +108,9 @@ export default function Home() {
           ) : !data ? (
             <ProjectGridSkeleton />
           ) : (
-            <div className="grid grid--3">
+            <div className="mosaic">
               {featured.map((p) => (
-                <ProjectCard key={p.id} p={p} />
+                <ProjectTile key={p.id} p={p} />
               ))}
             </div>
           )}
