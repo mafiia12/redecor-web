@@ -10,8 +10,11 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    environment:
+      ATTACHMENTS_DIR: /attachments
     volumes:
       - redecor-data:/data
+      - redecor-attachments:/attachments   # enquiry files: private, never served by Caddy
     ports:
       - "127.0.0.1:8000:8000"   # local checks only; the internet reaches the site through Caddy
     logging: *logging
@@ -35,14 +38,28 @@ services:
     env_file: .env
     environment:
       APP_ENV: production
+      ATTACHMENTS_DIR: /attachments
     volumes:
       - redecor-data:/data
+      - redecor-attachments:/attachments
       # - /mnt/offsite:/offsite        # optional second location, then set BACKUP_COPY_TO=/offsite in .env
-    command: ["python", "/app/tools/backup.py", "--db", "/data/redecor.db", "--uploads", "/data/uploads", "--out-dir", "/data/backups", "--loop-hours", "24"]
+    command: ["python", "/app/tools/backup.py", "--db", "/data/redecor.db", "--uploads", "/data/uploads", "--attachments", "/attachments", "--out-dir", "/data/backups", "--loop-hours", "24"]
     healthcheck: { disable: true }
+    logging: *logging
+
+  # Optional virus scanner for enquiry attachments (needs about 1-1.5 GB RAM).
+  # Start with: docker compose --profile virus-scan up -d   and set VIRUS_SCAN_ENABLED=1 in .env
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    profiles: ["virus-scan"]
+    volumes:
+      - clamav-db:/var/lib/clamav
     logging: *logging
 
 volumes:
   redecor-data:
+  redecor-attachments:
+  clamav-db:
   caddy-data:
   caddy-config:

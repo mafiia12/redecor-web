@@ -1,7 +1,13 @@
 # HTTPS with automatic Let's Encrypt certificates. SITE_DOMAIN comes from .env (e.g. redecorgroup.com).
 {$SITE_DOMAIN} {
 	encode zstd gzip
-	request_body {
+	# Enquiry form with attachments: 3 files x 15 MB (ATTACH_* limits) plus form overhead.
+	@enquiry path /api/enquiries*
+	request_body @enquiry {
+		max_size 32MB
+	}
+	@other not path /api/enquiries*
+	request_body @other {
 		max_size 120MB
 	}
 	header {

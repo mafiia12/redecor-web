@@ -33,6 +33,8 @@ class Image(Base):
     widths: Mapped[str] = mapped_column(String(100))  # "480,960,1600"
     color: Mapped[str] = mapped_column(String(7), default="#E4E1DB")  # average colour for placeholders
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # SHA-256 of the original upload: the same file is never added twice (migration 0002).
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
 
 class Project(Base):
@@ -88,6 +90,16 @@ class ProjectImage(Base):
     caption_en: Mapped[str] = mapped_column(String(300), default="")
     caption_ar: Mapped[str] = mapped_column(String(300), default="")
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    # ---- migration 0002 ----
+    # "render" | "executed". No default: an image without a kind is never shown publicly.
+    kind: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    focal_x: Mapped[float | None] = mapped_column(Float, nullable=True)  # 0..1, default centre
+    focal_y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    alt_en: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    alt_ar: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    quality_warnings: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    quality_override_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    quality_override_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     project: Mapped[Project] = relationship(back_populates="images")
     image: Mapped[Image] = relationship(lazy="joined")
@@ -152,6 +164,14 @@ class Enquiry(Base):
     notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Hash of the submitted content: the same enquiry sent twice within minutes is stored once.
     fingerprint: Mapped[str] = mapped_column(String(64), default="", server_default="", index=True)
+    # ---- migration 0004 (CRM) ----
+    assigned_to_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    next_follow_up: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    source_page: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+    attachments: Mapped[list["EnquiryAttachment"]] = relationship(
+        back_populates="enquiry", order_by="EnquiryAttachment.id", cascade="all, delete-orphan", lazy="selectin"
+    )
 
 
 class AuditLog(Base):
@@ -205,3 +225,81 @@ class SiteDocument(Base):
     size: Mapped[int] = mapped_column(Integer)
     published: Mapped[bool] = mapped_column(Boolean, default=False)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# ======================= Batch 2 tables (created by migrations, not by create_all) =======================
+
+
+class Approval(Base):
+    """Document-control style register. Append-only: a status change is a NEW row; rows are never edited.
+    The current status of (subject, approval_type) is the newest row."""
+
+    __tablename__ = "approvals"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subject_type: Mapped[str] = mapped_column(String(20), index=True)  # project | client
+    subject_id: Mapped[int] = mapped_column(Integer, index=True)
+    approval_type: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(10))  # pending | approved | rejected | revoked
+    approved_by_name: Mapped[str] = mapped_column(String(160), default="")
+    approver_organization: Mapped[str] = mapped_column(String(160), default="")
+    approval_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    evidence_note: Mapped[str] = mapped_column(String(500), default="")
+    evidence_file: Mapped[str | None] = mapped_column(String(40), nullable=True)  # stored name in the private store
+    evidence_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    recorded_by: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class EnquiryEvent(Base):
+    """Append-only CRM history: status changes, notes, assignment and follow-up changes."""
+
+    __tablename__ = "enquiry_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    enquiry_id: Mapped[int] = mapped_column(ForeignKey("enquiries.id", ondelete="CASCADE"), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    user_email: Mapped[str] = mapped_column(String(255))
+    kind: Mapped[str] = mapped_column(String(12))  # status | note | assign | follow_up
+    from_value: Mapped[str] = mapped_column(String(60), default="")
+    to_value: Mapped[str] = mapped_column(String(60), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+
+
+class EnquiryAttachment(Base):
+    """A file sent with an enquiry. Stored under a random name in the private attachments folder."""
+
+    __tablename__ = "enquiry_attachments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    enquiry_id: Mapped[int] = mapped_column(ForeignKey("enquiries.id", ondelete="CASCADE"), index=True)
+    stored_name: Mapped[str] = mapped_column(String(40), unique=True)
+    original_name: Mapped[str] = mapped_column(String(255))
+    size: Mapped[int] = mapped_column(Integer)
+    detected_type: Mapped[str] = mapped_column(String(10))  # pdf | dwg | dxf | xlsx | xls | docx | jpg | png | zip
+    sha256: Mapped[str] = mapped_column(String(64))
+    scan_status: Mapped[str] = mapped_column(String(16), default="quarantine")  # quarantine | clean | infected | error
+    scan_detail: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    enquiry: Mapped[Enquiry] = relationship(back_populates="attachments")
+
+
+class ImportLog(Base):
+    __tablename__ = "import_log"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    user_email: Mapped[str] = mapped_column(String(255))
+    kind: Mapped[str] = mapped_column(String(20))  # projects | images
+    filename: Mapped[str] = mapped_column(String(255))
+    created: Mapped[int] = mapped_column(Integer, default=0)
+    updated: Mapped[int] = mapped_column(Integer, default=0)
+    skipped: Mapped[int] = mapped_column(Integer, default=0)
+    errors: Mapped[int] = mapped_column(Integer, default=0)
+    backup_file: Mapped[str] = mapped_column(String(300), default="")
+
+
+class JobRun(Base):
+    """Last run of a scheduled job (e.g. the daily digest), so a restart never sends twice the same day."""
+
+    __tablename__ = "job_runs"
+    name: Mapped[str] = mapped_column(String(40), primary_key=True)
+    last_run: Mapped[str] = mapped_column(String(20), default="")  # e.g. 2026-10-19
+    last_status: Mapped[str] = mapped_column(String(200), default="")

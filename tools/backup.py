@@ -110,6 +110,8 @@ def run_once(a) -> Path:
         db_copy = Path(tmp) / "redecor.db"
         engine = dump_database(a.db, db_copy)
         files = [f for f in uploads.rglob("*") if f.is_file()] if uploads.exists() else []
+        att_dir = Path(getattr(a, "attachments", "") or "")
+        attachments = [f for f in att_dir.rglob("*") if f.is_file()] if str(att_dir) not in ("", ".") and att_dir.exists() else []
         manifest = {
             "created": stamp,
             "engine": engine,
@@ -117,15 +119,19 @@ def run_once(a) -> Path:
             "db_bytes": db_copy.stat().st_size,
             "upload_files": len(files),
             "upload_bytes": sum(f.stat().st_size for f in files),
+            "attachment_files": len(attachments),
         }
         with zipfile.ZipFile(partial, "w", zipfile.ZIP_DEFLATED) as z:
             z.write(db_copy, "redecor.db" if engine == "sqlite" else "redecor.sql")
             for f in files:
                 z.write(f, Path("uploads") / f.relative_to(uploads))
+            for f in attachments:  # private enquiry attachments (separate volume)
+                z.write(f, Path("attachments") / f.relative_to(att_dir))
             z.writestr("manifest.json", json.dumps(manifest, indent=2))
     partial.replace(target)
     verify_zip(target)
-    log(f"OK {target.name}: database {manifest['db_bytes']} bytes, {manifest['upload_files']} files")
+    log(f"OK {target.name}: database {manifest['db_bytes']} bytes, {manifest['upload_files']} files, "
+        f"{manifest['attachment_files']} attachments")
 
     if a.copy_to:
         dest_dir = Path(a.copy_to)
@@ -151,6 +157,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--db", default=default_db(), help="SQLite file or PostgreSQL URL (default: from DATABASE_URL)")
     ap.add_argument("--uploads", default=os.getenv("UPLOAD_DIR", str(ROOT / "uploads")))
+    ap.add_argument("--attachments", default=os.getenv("ATTACHMENTS_DIR", str(ROOT / "attachments")),
+                    help="private enquiry attachments folder")
     ap.add_argument("--out-dir", default=os.getenv("BACKUP_DIR", "backups"))
     ap.add_argument("--keep", type=int, default=int(os.getenv("BACKUP_KEEP", "14")), help="how many backups to keep")
     ap.add_argument("--copy-to", default=os.getenv("BACKUP_COPY_TO", ""), help="second location (network share / cloud-synced folder)")

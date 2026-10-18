@@ -10,17 +10,18 @@ RUN npm run build
 FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
     APP_ENV=production UPLOAD_DIR=/data/uploads DATABASE_URL=sqlite:////data/redecor.db \
-    FRONTEND_DIST=/app/frontend/dist BACKUP_DIR=/data/backups
+    FRONTEND_DIST=/app/frontend/dist BACKUP_DIR=/data/backups ATTACHMENTS_DIR=/attachments REDIRECTS_FILE=/app/deploy/redirects.json
 WORKDIR /app
 COPY backend/requirements.txt backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/app backend/app
-COPY tools/backup.py tools/restore.py tools/
+COPY tools/backup.py tools/restore.py tools/migrate.py tools/check_env.py tools/
+COPY deploy/redirects.json deploy/redirects.json
 COPY --from=web /web/dist frontend/dist
 # Run as an unprivileged user; /data is the only writable place (mount a volume there).
-RUN useradd --system --uid 10001 --home /app redecor && mkdir -p /data && chown -R redecor /data
+RUN useradd --system --uid 10001 --home /app redecor && mkdir -p /data /attachments && chown -R redecor /data /attachments
 USER redecor
-VOLUME /data
+VOLUME /data /attachments
 EXPOSE 8000
 WORKDIR /app/backend
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

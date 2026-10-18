@@ -23,6 +23,7 @@ def main() -> int:
     ap.add_argument("zip")
     ap.add_argument("--db", required=True, help="where the SQLite database must end up")
     ap.add_argument("--uploads", required=True, help="where the uploads folder must end up")
+    ap.add_argument("--attachments", default="", help="where the private attachments folder must end up")
     a = ap.parse_args()
     manifest = verify_zip(Path(a.zip))
     if manifest["engine"] != "sqlite":
@@ -33,7 +34,8 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         with zipfile.ZipFile(a.zip) as z:
             z.extractall(tmp)
-        for p in (db, Path(f"{db}-wal"), Path(f"{db}-shm"), uploads):
+        att = Path(a.attachments) if a.attachments else None
+        for p in (db, Path(f"{db}-wal"), Path(f"{db}-shm"), uploads, *([att] if att else [])):
             if p.exists():
                 aside = p.with_name(f"{p.name}.before-restore-{stamp}")
                 p.rename(aside)
@@ -45,6 +47,12 @@ def main() -> int:
             shutil.move(str(src_up), uploads)
         else:
             uploads.mkdir(parents=True, exist_ok=True)
+        src_att = Path(tmp) / "attachments"
+        if att is not None:
+            if src_att.exists():
+                shutil.move(str(src_att), att)
+            else:
+                att.mkdir(parents=True, exist_ok=True)
     log(f"restored {a.zip}: {manifest['upload_files']} files. Start the website again.")
     return 0
 

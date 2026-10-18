@@ -266,23 +266,49 @@ def test_seo_head_status_and_fresh_index(client, auth, dist):
 
 
 # ---------- migrations ----------
+def _migrate(db, code):
+    env = os.environ | {"DATABASE_URL": f"sqlite:///{db}"}
+    return subprocess.run([sys.executable, "-c", "import app.models\nfrom app import migrations\n" + code],
+                          env=env, cwd=Path(__file__).parents[1], capture_output=True, text=True, check=True).stdout
+
+
 def test_forward_migration_adds_columns_and_backs_up(tmp_path):
+    """An old first-release database (no schema_migrations table) is upgraded in place, keeping its rows."""
     db = tmp_path / "old.db"
     con = sqlite3.connect(db)
     con.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, email VARCHAR(255), password_hash VARCHAR(255), created_at DATETIME)")
     con.execute("INSERT INTO users (email, password_hash) VALUES ('keep@me.com', 'x')")
     con.commit()
     con.close()
-    code = (
-        "from app.db import Base, engine, ensure_columns\nimport app.models\n"
-        "Base.metadata.create_all(engine)\nprint(','.join(ensure_columns()))"
-    )
-    env = os.environ | {"DATABASE_URL": f"sqlite:///{db}"}
-    out = subprocess.run([sys.executable, "-c", code], env=env, cwd=Path(__file__).parents[1], capture_output=True, text=True, check=True)
-    assert "users.role" in out.stdout and "users.token_version" in out.stdout
+    out = _migrate(db, "print(','.join(migrations.upgrade()))")
+    assert "0001_baseline" in out and "0005_import_log" in out
     con = sqlite3.connect(db)
     assert con.execute("SELECT email, role, token_version FROM users").fetchall() == [("keep@me.com", "admin", 0)]
     assert list(tmp_path.glob("old.db.pre-migrate-*.bak"))  # rollback copy made before altering
+
+
+def test_migrations_up_down_up_keep_data(tmp_path):
+    db = tmp_path / "copy.db"
+    _migrate(db, "migrations.upgrade()")
+    con = sqlite3.connect(db)
+    con.execute("INSERT INTO projects (slug, title_en, title_ar, summary_en, summary_ar, city_en, city_ar, country, type, "
+                "scope_en, scope_ar, is_render, featured, published, sort_order, created_at, updated_at) VALUES "
+                "('test-project-1','Test Project 1','','','','','','eg','office','','',0,1,0,0,'2026-01-01','2026-01-01')")
+    con.commit()
+    con.close()
+    cols = lambda: {r[1] for r in sqlite3.connect(db).execute("PRAGMA table_info(project_images)")}  # noqa: E731
+    tables = lambda: {r[0] for r in sqlite3.connect(db).execute("SELECT name FROM sqlite_master WHERE type='table'")}  # noqa: E731
+    assert {"kind", "focal_x"} <= cols() and {"approvals", "enquiry_events", "import_log"} <= tables()
+    out = _migrate(db, "print(','.join(migrations.downgrade(steps=4)))")
+    assert out.strip() == "0005_import_log,0004_crm_attachments,0003_approvals,0002_media_quality"
+    assert "kind" not in cols() and "approvals" not in tables() and "enquiry_events" not in tables()
+    assert list(tmp_path.glob("copy.db.pre-downgrade-*.bak"))
+    _migrate(db, "migrations.upgrade()")
+    assert {"kind", "focal_x"} <= cols() and "approvals" in tables()
+    rows = sqlite3.connect(db).execute("SELECT slug FROM projects").fetchall()
+    assert rows == [("test-project-1",)]  # data survived up -> down -> up
+    with pytest.raises(subprocess.CalledProcessError):
+        _migrate(db, "migrations.downgrade(steps=99)")  # the baseline is never reverted
 
 
 # ---------- analytics, documents, testimonials, preview, order ----------
@@ -322,9 +348,11 @@ def test_draft_preview_and_reorder(client, auth):
     assert "Photos" in client.get(f"/api/admin/projects/{a['id']}", headers=auth).json()["missing"]
 
 
-def test_ready_health(client):
+def test_ready_health(client, auth):
     r = client.get("/api/health/ready")
-    assert r.status_code == 200 and r.json()["database"] == "ok" and r.json()["uploads"] == "ok"
+    assert r.status_code == 200 and r.json() == {"ok": True}  # public: no internal details
+    d = client.get("/api/health/ready", headers=auth).json()
+    assert d["database"] == "ok" and d["uploads"] == "ok"
 
 
 def test_head_requests_for_uptime_monitors(client):

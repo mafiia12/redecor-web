@@ -1,6 +1,8 @@
 import asyncio
+import json
 import logging
 import os
+import secrets
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -11,21 +13,23 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
 
 from . import (
+    migrations,
     models,  # noqa: F401  (register tables)
     seo,
 )
 from .alerts import alert
 from .config import settings
-from .db import Base, SessionLocal, engine, ensure_columns
-from .models import Enquiry, Project
+from .db import SessionLocal
+from .models import Enquiry, Project, User
 from .notify import retry_pending
 from .routers import admin, admin_system, public
-from .security import password_problems
+from .security import current_user, password_problems
 from .seed import seed
 from .visibility import public_projects
 
@@ -45,6 +49,8 @@ def check_production() -> None:
         problems.append("SEED_DEMO must be 0")
     if settings.allow_test_content:
         problems.append("ALLOW_TEST_CONTENT must be 0")
+    if not settings.enforce_approvals:
+        problems.append("ENFORCE_APPROVALS must be 1 (the publishing gate cannot be switched off in production)")
     if not settings.site_url.startswith("https://"):
         problems.append("SITE_URL must be the public https:// address")
     if settings.admin_password and password_problems(settings.admin_password, settings.admin_email):
@@ -69,12 +75,18 @@ async def lifespan(_: FastAPI):
     check_production()
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     (settings.upload_dir / "docs").mkdir(parents=True, exist_ok=True)
-    Base.metadata.create_all(engine)
-    added = ensure_columns()
-    if added:
-        log.info("Database migrated, columns added: %s", ", ".join(added))
+    applied_now = migrations.upgrade()
+    if applied_now:
+        log.info("Database migrated: %s", ", ".join(applied_now))
     with SessionLocal() as db:
         seed(db)
+        # ADMIN_PASSWORD is needed only on the very first start; afterwards the app runs without it.
+        if settings.is_production and not db.scalar(select(func.count()).select_from(User)):
+            raise RuntimeError("No admin account exists yet: set ADMIN_EMAIL and ADMIN_PASSWORD for the first start")
+    settings.attachments_dir.mkdir(parents=True, exist_ok=True)
+    if settings.upload_dir in (settings.attachments_dir, *settings.attachments_dir.parents):
+        raise RuntimeError("ATTACHMENTS_DIR must not be inside the public UPLOAD_DIR")
+    load_redirects()
     task = asyncio.create_task(_retry_loop()) if settings.notify_retry_seconds > 0 else None
     if task:
         asyncio.get_running_loop().run_in_executor(None, retry_pending)  # pick up anything left from before a restart
@@ -130,6 +142,23 @@ def _body_limit(path: str) -> int:
     return _SMALL
 
 
+REDIRECTS: dict[str, str] = {}
+
+
+def load_redirects() -> None:
+    """Old-site URLs -> new paths, from REDIRECTS_FILE ({"/old": "/new"}). Missing or empty file = no redirects."""
+    REDIRECTS.clear()
+    f = Path(settings.redirects_file)
+    if not f.is_file():
+        return
+    data = json.loads(f.read_text(encoding="utf-8") or "{}")
+    for src, dst in data.items():
+        if not (isinstance(src, str) and src.startswith("/") and isinstance(dst, str) and (dst.startswith("/") or dst.startswith("https://"))):
+            raise RuntimeError(f"Invalid redirect in {f}: {src!r} -> {dst!r}")
+        REDIRECTS[src.rstrip("/") or "/"] = dst
+    log.info("Loaded %d redirects from %s", len(REDIRECTS), f)
+
+
 CSP = (
     "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; "
     "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; "
@@ -144,8 +173,14 @@ async def guard(request: Request, call_next):
         length = request.headers.get("content-length")
         if length and length.isdigit() and int(length) > _body_limit(request.url.path):
             return JSONResponse({"detail": "Request body too large"}, status_code=413)
-    resp = await call_next(request)
+    target = REDIRECTS.get(request.url.path.rstrip("/") or "/")
+    if target and request.method in ("GET", "HEAD"):
+        resp = RedirectResponse(target, status_code=301)
+    else:
+        resp = await call_next(request)
     h = resp.headers
+    if not settings.is_primary_host:  # staging / "new." host: never indexed
+        h["X-Robots-Tag"] = "noindex, nofollow"
     h.setdefault("X-Content-Type-Options", "nosniff")
     h.setdefault("X-Frame-Options", "DENY")
     h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -203,9 +238,24 @@ def sitemap():
     return Response(xml, media_type="application/xml")
 
 
+def _may_see_health_details(request: Request) -> bool:
+    if settings.health_token and secrets.compare_digest(request.headers.get("x-health-token", ""), settings.health_token):
+        return True
+    auth = request.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        try:
+            with SessionLocal() as db:
+                current_user(HTTPAuthorizationCredentials(scheme="Bearer", credentials=auth[7:]), db)
+            return True
+        except HTTPException:
+            return False
+    return False
+
+
 @app.api_route("/api/health/ready", methods=["GET", "HEAD"], include_in_schema=False)
-def ready():
-    """Deep check for uptime monitors: database, upload storage, notification backlog, backup age."""
+def ready(request: Request):
+    """Deep check for uptime monitors. Publicly only {"ok": true} / HTTP 503; the details (database, storage,
+    notification backlog, backup age) need a signed-in admin or the X-Health-Token header (HEALTH_TOKEN)."""
     checks: dict[str, object] = {}
     ok = True
     try:
@@ -228,7 +278,8 @@ def ready():
     if settings.backup_dir:
         latest = max(Path(settings.backup_dir).glob("redecor-backup-*.zip"), default=None, key=lambda f: f.stat().st_mtime)
         checks["last_backup_hours"] = round((time.time() - latest.stat().st_mtime) / 3600, 1) if latest else None
-    return JSONResponse({"ok": ok, **checks}, status_code=200 if ok else 503)
+    body = {"ok": ok, **checks} if _may_see_health_details(request) else {"ok": ok}
+    return JSONResponse(body, status_code=200 if ok else 503)
 
 
 @app.get("/api/{rest:path}", include_in_schema=False)
