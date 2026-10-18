@@ -162,3 +162,8 @@ def test_standalone_project_page_fields(client, auth):
     assert client.delete(f"/api/admin/projects/{pid}/logo", headers=auth).status_code == 204
     assert client.get("/api/projects/obliq-test").json()["logo"] is None
     client.delete(f"/api/admin/projects/{pid}", headers=auth)
+
+
+def test_wrong_content_type_is_422_not_500(client, auth):
+    r = client.post("/api/admin/clients", headers=auth, files={"logo": ("l.png", make_png(), "image/png")}, data={"name": "x"})
+    assert r.status_code == 422

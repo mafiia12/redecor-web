@@ -1,63 +1,87 @@
-import { useState } from "react";
-import { DIVISIONS, TEAM } from "../content";
+import { useRef, useState, type KeyboardEvent } from "react";
+import { DIVISIONS, TEAM, type Member } from "../content";
 import { useLang } from "../lib/context";
-import { Reveal } from "./Reveal";
+import { SitePhoto } from "./Photo";
+import { SectionHead } from "./SectionHead";
 
-/** Side-tab layout: pick a division on the side, read what it does and who leads it. */
-export function Divisions() {
+/** Side tabs (one per division); the panel shows its render (admin slot division-<id>), scope and the people leading it. */
+export function Divisions({ index = "03" }: { index?: string }) {
   const { t, lang } = useLang();
   const [i, setI] = useState(0);
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const d = DIVISIONS[i];
-  const leads = d.lead.map((n) => TEAM.find((m) => m.name.en === n)).filter((m): m is (typeof TEAM)[number] => !!m);
+  const leads = d.lead.map((n) => TEAM.find((m) => m.name.en === n)).filter((m): m is Member => !!m);
   const ceo = TEAM[0];
+
+  const onKey = (e: KeyboardEvent) => {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const next = (i + step + DIVISIONS.length) % DIVISIONS.length;
+    setI(next);
+    tabs.current[next]?.focus();
+  };
+
   return (
-    <section className="section section--tight" aria-labelledby="div-title">
+    <section className="section" aria-labelledby="div-title">
       <div className="container">
-        <Reveal className="section-head">
-          <h2 className="h2" id="div-title">{t.about.divisions}</h2>
-          <p className="lead">{t.about.divisionsSub}</p>
-        </Reveal>
+        <SectionHead id="div-title" index={index} eyebrow={t.eyebrow.divisions} title={t.about.divisions} sub={t.about.divisionsSub} />
         <div className="divs">
-          <div className="divs__tabs" role="tablist" aria-orientation="vertical">
+          <div className="divs__tabs" role="tablist" aria-orientation="vertical" onKeyDown={onKey}>
             {DIVISIONS.map((x, k) => (
               <button
                 key={x.id}
+                ref={(el) => (tabs.current[k] = el)}
                 role="tab"
                 id={`div-tab-${x.id}`}
                 aria-selected={k === i}
                 aria-controls="div-panel"
+                tabIndex={k === i ? 0 : -1}
                 className={`divs__tab${k === i ? " is-on" : ""}`}
                 onClick={() => setI(k)}
               >
-                <span>{String(k + 1).padStart(2, "0")}</span>
-                {x.name[lang]}
+                <span className="divs__n">{String(k + 1).padStart(2, "0")}</span>
+                <span>{x.name[lang]}</span>
               </button>
             ))}
           </div>
+
           <div className="divs__panel" id="div-panel" role="tabpanel" aria-labelledby={`div-tab-${d.id}`} key={d.id}>
-            <h3>{d.name[lang]}</h3>
-            <p>{d.text[lang]}</p>
-            <ul className="divs__points">
-              {d.points[lang].map((p) => <li key={p}>{p}</li>)}
-            </ul>
-            <div className="divs__team">
-              <span className="kicker">{t.about.team}</span>
-              {leads.length ? (
-                <ul>
-                  {leads.map((m) => (
-                    <li key={m.name.en}>
+            <SitePhoto slot={`division-${d.id}`} ratio="16/9" alt={d.name[lang]} className="divs__img" sizes="(min-width:900px) 820px, 100vw" />
+            <div className="divs__body">
+              <div>
+                <h3 className="divs__title">{d.name[lang]}</h3>
+                <p className="divs__text">{d.text[lang]}</p>
+                <ul className="divs__points">
+                  {d.points[lang].map((p) => <li key={p}>{p}</li>)}
+                </ul>
+              </div>
+              <aside className="divs__team" aria-label={t.about.team}>
+                <span className="divs__label">{t.about.team}</span>
+                {leads.length ? (
+                  leads.map((m) => (
+                    <p key={m.name.en} className="person">
                       <strong>{m.name[lang]}</strong>
                       <span>{m.title[lang]}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="divs__soon">{t.about.teamSoon}</p>
-              )}
-              <p className="divs__ceo">{t.about.leadership}: {ceo.name[lang]}, {ceo.title[lang]}</p>
+                    </p>
+                  ))
+                ) : (
+                  <p className="divs__soon">{t.about.teamSoon}</p>
+                )}
+              </aside>
             </div>
           </div>
         </div>
+
+        {ceo && (
+          <div className="lead-strip">
+            <span className="divs__label">{t.about.leadership}</span>
+            <p className="person">
+              <strong>{ceo.name[lang]}</strong>
+              <span>{ceo.title[lang]}</span>
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

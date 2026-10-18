@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from xml.sax.saxutils import escape
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
@@ -30,6 +31,12 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Redecor Group API", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(_: Request, exc: RequestValidationError):
+    # Drop the echoed input: it can be raw bytes (a wrong content type) that would crash JSON encoding.
+    return JSONResponse({"detail": [{"loc": e.get("loc"), "msg": e.get("msg")} for e in exc.errors()]}, status_code=422)
 
 if settings.cors_origins:
     app.add_middleware(

@@ -1,21 +1,22 @@
 import { Link } from "react-router-dom";
 import { SOCIAL } from "../config";
+import { services } from "../i18n";
 import { isRealNumber, pick, useData, useLang, waDigits } from "../lib/context";
-import { SitePhoto } from "./Photo";
+import { openWhatsApp } from "./WhatsApp";
+
+const real = (v?: string) => !!v && !v.includes("[");
 
 export function Footer() {
   const { t, lp, lang } = useLang();
   const { data } = useData();
   const offices = data?.offices ?? [];
-  const real = (v: string) => !!v && !v.includes("[");
-  const unique = (xs: string[]) => [...new Set(xs.filter(real))];
-
-  const locations = offices.map((o) => pick(o, "address", lang)).filter(real);
-  const emails = unique(offices.map((o) => o.email));
-  const phones = unique(offices.map((o) => o.phone));
+  const eg = offices.find((o) => o.country === "eg") ?? offices[0];
+  const address = eg ? pick(eg, "address", lang) : "";
+  const email = offices.map((o) => o.email).find(real);
+  const phone = offices.map((o) => o.phone).find(real);
+  const maps = offices.map((o) => o.maps_url).find(real);
   const socials = Object.entries(SOCIAL).filter(([, url]) => url);
-  const nav = [
-    [t.nav.services, lp("/services/fitout")],
+  const company = [
     [t.nav.projects, lp("/projects")],
     [t.nav.about, lp("/about")],
     [t.nav.clients, lp("/#clients")],
@@ -23,54 +24,63 @@ export function Footer() {
   ];
 
   return (
-    <footer className="footer" data-dark>
-      <div className="footer__split">
-        <div className="footer__left">
-          <SitePhoto slot="footer-bg" ratio="16/9" alt="" sizes="(min-width:900px) 66vw, 100vw" />
-          <h2 className="footer__name">{t.brand}</h2>
-          <div className="footer__cols">
-            <div>
-              <h3>{t.footer.location}</h3>
-              {(locations.length ? locations : [t.brand]).slice(0, 2).map((l) => (
-                <p key={l} style={{ marginBottom: 12 }}>{l}</p>
-              ))}
-            </div>
-            <div>
-              <h3>{t.footer.message}</h3>
-              {emails.map((e) => (
-                <p key={e}><a href={`mailto:${e}`}>{e}</a></p>
-              ))}
-            </div>
-            <div>
-              <h3>{t.footer.contact}</h3>
-              {phones.map((n) => (
-                <p key={n} dir="ltr" style={{ textAlign: lang === "ar" ? "right" : "left" }}>
-                  {isRealNumber(n) ? <a href={`tel:+${waDigits(n)}`}>{n}</a> : n}
-                </p>
-              ))}
-            </div>
+    <footer className="ft" data-dark>
+      <div className="container">
+        <div className="ft__top">
+          <div className="ft__brand">
+            <img src="/logo-light.svg" alt={t.brand} width={150} height={86} loading="lazy" />
+            <p className="ft__statement">{t.footer.statement}</p>
+            <p className="ft__tag">{t.footer.tagline}</p>
           </div>
-        </div>
-        <div className="footer__right">
-          <h3>{t.footer.follow}</h3>
-          <ul className="footer__social-list" aria-label={t.footer.social}>
-            {socials.map(([name, url]) => (
-              <li key={name}>
-                <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      <div className="footer__sub">
-        <div className="container footer__bottom" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: "12px 24px" }}>
-          <nav aria-label="Footer" style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px" }}>
-            {nav.map(([label, to]) => (
-              <Link key={to} to={to}>{label}</Link>
-            ))}
+
+          <nav className="ft__col" aria-label={t.footer.services}>
+            <h3>{t.footer.services}</h3>
+            <ul>
+              {services[lang].map((s) => (
+                <li key={s.slug}><Link to={lp(`/services/${s.slug}`)}>{s.title}</Link></li>
+              ))}
+            </ul>
           </nav>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", alignItems: "center" }}>
-            <span style={{ color: "var(--faint-dark)", fontSize: 14 }}>{t.footer.copyright}</span>
+
+          <nav className="ft__col" aria-label={t.footer.company}>
+            <h3>{t.footer.company}</h3>
+            <ul>
+              {company.map(([label, to]) => (
+                <li key={to}><Link to={to}>{label}</Link></li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="ft__col">
+            <h3>{t.footer.contact}</h3>
+            <ul>
+              {real(address) && <li className="ft__addr">{address}</li>}
+              {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
+              {phone && (
+                <li dir="ltr" className="ft__ltr">
+                  {isRealNumber(phone) ? <a href={`tel:+${waDigits(phone)}`}>{phone}</a> : phone}
+                </li>
+              )}
+              <li><button type="button" className="ft__link" onClick={openWhatsApp}>{t.footer.whatsapp}</button></li>
+              {maps && <li><a href={maps} target="_blank" rel="noopener noreferrer">{t.footer.directions} ↗</a></li>}
+            </ul>
+          </div>
+
+          {socials.length > 0 && (
+            <div className="ft__col">
+              <h3>{t.footer.follow}</h3>
+              <ul aria-label={t.footer.social}>
+                {socials.map(([name, url]) => (
+                  <li key={name}><a href={url} target="_blank" rel="noopener noreferrer">{name} ↗</a></li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="ft__bottom">
+          <span>{t.footer.copyright}</span>
+          <span className="ft__legal">
             <Link to={lp("/privacy")}>{t.footer.privacy}</Link>
             <Link to="/admin">{t.footer.staff}</Link>
           </span>

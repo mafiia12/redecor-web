@@ -16,7 +16,10 @@ SLOTS: list[tuple[str, str]] = [
     ("how-we-work-1", "How we work: Planning & Budgeting"),
     ("how-we-work-2", "How we work: Design & Development"),
     ("how-we-work-3", "How we work: Execution & Close-Out"),
+    ("division-design", "Our divisions: Interior Design (render, landscape)"),
+    ("division-execution", "Our divisions: Execution & Fit-Out (site photo, landscape)"),
+    ("division-contracting", "Our divisions: Contracting & Commercial (landscape)"),
+    ("division-bd", "Our divisions: Business Development (landscape)"),
     ("about-hero", "About: tall photo beside the text (portrait works best)"),
-    ("footer-bg", "Footer: background photo (left half)"),
 ]
 SLOT_KEYS = {k for k, _ in SLOTS}

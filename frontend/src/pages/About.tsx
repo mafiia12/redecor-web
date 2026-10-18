@@ -56,8 +56,8 @@ export default function About() {
           </Reveal>
         </div>
       </section>
-      <Divisions />
-      <HowWeWork />
+      <Divisions index="01" />
+      <HowWeWork index="02" />
       <section className="section">
         <div className="container">
           <Reveal className="section-head">

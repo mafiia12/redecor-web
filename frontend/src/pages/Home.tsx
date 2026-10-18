@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ProjectGridSkeleton, ProjectTile, ServiceTile } from "../components/Cards";
+import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
+import { SectionHead } from "../components/SectionHead";
 import { Segmented } from "../components/Filters";
 import { ClientWall } from "../components/ClientWall";
 import { Divisions } from "../components/Divisions";
@@ -14,13 +15,6 @@ import type { Country } from "../lib/api";
 import { useHeroScale } from "../lib/hooks";
 import { useMode } from "../lib/theme";
 import { services } from "../i18n";
-
-const SERVICE_HINTS: Record<string, string> = {
-  contracting: "Service: structural and finishing works on site",
-  fitout: "Service: close-up of stone floor meeting timber joinery",
-  supply: "Service: curated materials and fixtures ready for delivery",
-  "project-management": "Service: project manager reviewing progress on site",
-};
 
 export default function Home() {
   const { t, lp, lang } = useLang();
@@ -73,28 +67,32 @@ export default function Home() {
 
       <section className="section" aria-labelledby="services-title">
         <div className="container">
-          <Reveal className="section-head">
-            <h2 className="h2" id="services-title">{t.home.servicesTitle}</h2>
-            <p className="lead">{t.home.servicesSub}</p>
-          </Reveal>
-          <div className="grid grid--4">
+          <SectionHead id="services-title" index="01" eyebrow={t.eyebrow.services} title={t.home.servicesTitle} sub={t.home.servicesSub} />
+          <ul className="svc">
             {services[lang].map((s, i) => (
-              <Reveal key={s.slug} delay={i * 80}>
-                <ServiceTile to={lp(`/services/${s.slug}`)} title={s.title} text={s.text} slot={`service-${s.slug}`} hint={SERVICE_HINTS[s.slug]} />
+              <Reveal as="li" key={s.slug} delay={i * 60}>
+                <Link to={lp(`/services/${s.slug}`)} className="svc__row">
+                  <span className="svc__n">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="svc__title">{s.title}</span>
+                  <span className="svc__text">{s.text}</span>
+                  <span className="svc__thumb"><SitePhoto slot={`service-${s.slug}`} ratio="4/3" alt="" sizes="160px" /></span>
+                  <span className="svc__arrow" aria-hidden="true">→</span>
+                </Link>
               </Reveal>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
       <section className="section section--surface" aria-labelledby="projects-title">
         <div className="container">
-          <Reveal className="section-head section-head--row">
-            <div>
-              <h2 className="h2" id="projects-title">{t.home.projectsTitle}</h2>
-              <p className="lead">{t.home.projectsSub}</p>
-            </div>
-            {new Set((data?.projects ?? []).map((p) => p.country)).size > 1 && <Segmented
+          <SectionHead
+            id="projects-title"
+            index="02"
+            eyebrow={t.eyebrow.projects}
+            title={t.home.projectsTitle}
+            sub={t.home.projectsSub}
+            aside={new Set((data?.projects ?? []).map((p) => p.country)).size > 1 && <Segmented
               label={t.filters.country}
               value={country}
               onChange={setCountry}
@@ -105,7 +103,7 @@ export default function Home() {
                   .map((c) => ({ value: c, label: t.filters[c] })),
               ]}
             />}
-          </Reveal>
+          />
           {!data && error ? (
             <div className="empty">
               <p>{t.projects.loadError}</p>
