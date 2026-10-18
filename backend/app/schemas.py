@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -10,7 +10,8 @@ Country = Literal["eg", "qa", "sa"]
 ProjectType = Literal["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public", "education", "landscape"]
 Service = Literal["contracting", "fitout", "supply", "pm", "unsure"]
 ContactMethod = Literal["phone", "whatsapp", "email"]
-EnquiryStatus = Literal["new", "contacted", "closed"]
+EnquiryStatus = Literal["new", "contacted", "quoted", "won", "lost", "spam", "closed"]  # "closed": before the CRM
+EnquiryStatusNew = Literal["new", "contacted", "quoted", "won", "lost", "spam"]
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -358,10 +359,47 @@ class EnquiryAdminOut(BaseModel):
     notify_attempts: int = 0
     notify_error: str = ""
     notified_at: datetime | None = None
+    assigned_to_id: int | None = None
+    assigned_to: str = ""
+    next_follow_up: date | None = None
+    source_page: str | None = ""
+    overdue: bool = False
+    attachment_count: int = 0
+    next_statuses: list[str] = []
 
 
-class EnquiryStatusIn(BaseModel):
-    status: EnquiryStatus
+class EnquiryAttachmentOut(BaseModel):
+    id: int
+    original_name: str
+    size: int
+    detected_type: str
+    scan_status: str
+    scan_detail: str
+
+
+class EnquiryEventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    at: datetime
+    user_email: str
+    kind: str
+    from_value: str
+    to_value: str
+    note: str
+
+
+class EnquiryDetailOut(EnquiryAdminOut):
+    events: list[EnquiryEventOut] = []
+    attachments: list[EnquiryAttachmentOut] = []
+
+
+class EnquiryPatch(BaseModel):
+    """Any subset; each change is written to the enquiry's history."""
+
+    status: EnquiryStatusNew | None = None
+    assigned_to_id: int | None = None  # send null to unassign
+    next_follow_up: date | None = None  # send null to clear
+    note: str = Field(default="", max_length=4000)
 
 
 class OrderIn(BaseModel):

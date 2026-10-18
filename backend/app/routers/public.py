@@ -145,6 +145,7 @@ def create_enquiry(data: EnquiryIn, request: Request, background: BackgroundTask
         lang=data.lang,
         fingerprint=fp,
         notify_status="pending",
+        source_page=data.source[:200] or None,
     )
     db.add(e)
     db.commit()  # stored first: a notification problem can never lose the enquiry

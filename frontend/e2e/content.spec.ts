@@ -86,7 +86,8 @@ test("import: CSV dry run lists problems, confirm creates drafts only", async ({
   await expect(page.getByText(/country: Input should be/)).toBeVisible();
   await page.getByRole("button", { name: "2. Confirm: create 1, update 0" }).click();
   await expect(page.getByText(/Created 1, updated 0/)).toBeVisible();
-  const { token } = await (await page.request.post("/api/admin/login", { data: ADMIN })).json();
+  // reuse the signed-in session (another login could hit the login rate limit)
+  const token = await page.evaluate(() => sessionStorage.getItem("redecor:admin-token"));
   const list = await (await page.request.get("/api/admin/projects", { headers: { Authorization: `Bearer ${token}` } })).json();
   const p = list.find((x: { slug: string }) => x.slug === "test-project-import-1");
   expect(p.published).toBe(false);

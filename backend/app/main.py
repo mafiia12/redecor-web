@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
 
 from . import (
+    crm,
     migrations,
     models,  # noqa: F401  (register tables)
     seo,
@@ -28,7 +29,7 @@ from .config import settings
 from .db import SessionLocal
 from .models import Enquiry, Project, User
 from .notify import retry_pending
-from .routers import admin, admin_content, admin_system, public
+from .routers import admin, admin_content, admin_crm, admin_system, public
 from .security import current_user, password_problems
 from .seed import seed
 from .visibility import public_projects
@@ -70,6 +71,18 @@ async def _retry_loop() -> None:
             log.exception("Notification retry loop failed")
 
 
+async def _digest_loop() -> None:
+    """Daily enquiries digest at DIGEST_TIME (DIGEST_TZ). Checked every minute; the job_runs claim makes sure
+    it goes out once per day even after restarts or with several workers."""
+    while True:
+        await asyncio.sleep(60)
+        try:
+            if crm.digest_due() and await asyncio.to_thread(crm.digest_pending):
+                await asyncio.to_thread(crm.run_digest)
+        except Exception:  # noqa: BLE001
+            log.exception("Digest loop failed")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     check_production()
@@ -90,9 +103,12 @@ async def lifespan(_: FastAPI):
     task = asyncio.create_task(_retry_loop()) if settings.notify_retry_seconds > 0 else None
     if task:
         asyncio.get_running_loop().run_in_executor(None, retry_pending)  # pick up anything left from before a restart
+    digest = asyncio.create_task(_digest_loop()) if settings.digest_time else None
     yield
     if task:
         task.cancel()
+    if digest:
+        digest.cancel()
 
 
 _docs = not settings.is_production
@@ -259,6 +275,7 @@ app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(admin_system.router)
 app.include_router(admin_content.router)
+app.include_router(admin_crm.router)
 
 
 @app.get("/robots.txt", include_in_schema=False)

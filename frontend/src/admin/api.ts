@@ -162,11 +162,40 @@ export interface AdminEnquiry {
   message: string;
   contact_method: string;
   lang: string;
-  status: "new" | "contacted" | "closed";
+  status: EnquiryStatus;
   notify_status: string;
   notify_attempts: number;
   notify_error: string;
   notified_at: string | null;
+  assigned_to_id: number | null;
+  assigned_to: string;
+  next_follow_up: string | null;
+  source_page: string | null;
+  overdue: boolean;
+  attachment_count: number;
+  next_statuses: EnquiryStatus[];
+}
+export type EnquiryStatus = "new" | "contacted" | "quoted" | "won" | "lost" | "spam" | "closed";
+export interface EnquiryEvent {
+  id: number;
+  at: string;
+  user_email: string;
+  kind: "status" | "note" | "assign" | "follow_up";
+  from_value: string;
+  to_value: string;
+  note: string;
+}
+export interface EnquiryAttachment {
+  id: number;
+  original_name: string;
+  size: number;
+  detected_type: string;
+  scan_status: "quarantine" | "clean" | "infected" | "error";
+  scan_detail: string;
+}
+export interface EnquiryDetail extends AdminEnquiry {
+  events: EnquiryEvent[];
+  attachments: EnquiryAttachment[];
 }
 export type Role = "admin" | "editor" | "viewer";
 export interface Me {

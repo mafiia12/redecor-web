@@ -70,3 +70,13 @@
 .adm-no { color: #b3261e; font-weight: 600; }
 .adm-summary { font-size: 16px; margin: 0 0 12px; }
 .adm code { background: var(--surface); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+
+/* Enquiries CRM */
+.adm-filters { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-items: end; }
+.adm-card--overdue { border-left: 4px solid #c77700; }
+.adm-pre { white-space: pre-wrap; font-size: 13px; background: var(--surface); padding: 12px; border-radius: 8px; max-height: 360px; overflow: auto; }
+.adm-panel { border-top: 1px solid var(--line, #e5e5e5); padding-top: 12px; }
+.adm-files { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
+.adm-files li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+.adm-history { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 8px; }
+.adm-history li { border-left: 2px solid var(--line, #e5e5e5); padding-left: 10px; }

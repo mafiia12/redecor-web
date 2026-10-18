@@ -163,7 +163,7 @@ def test_roles_are_enforced_on_the_server(client, auth):
     assert client.get("/api/admin/projects", headers=vw).status_code == 200
     assert client.post("/api/admin/projects", headers=vw, json={"title_en": "X", "country": "eg", "type": "office"}).status_code == 403
     assert client.get("/api/admin/enquiries", headers=vw).status_code == 403
-    assert client.get("/api/admin/enquiries", headers=ed).status_code == 200
+    assert client.get("/api/admin/enquiries", headers=ed).status_code == 403  # batch 2: enquiries are admin-only (personal data)
     assert client.get("/api/admin/users", headers=ed).status_code == 403
     assert client.put("/api/admin/offices/eg", headers=ed, json={}).status_code == 403
     weak = client.post("/api/admin/users", headers=auth, json={"email": "w@test.com", "role": "editor", "password": "short"})

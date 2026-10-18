@@ -15,7 +15,7 @@ WORKDIR /app
 COPY backend/requirements.txt backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/app backend/app
-COPY tools/backup.py tools/restore.py tools/migrate.py tools/check_env.py tools/bulk_images.py tools/approval_gate_report.py tools/import_projects.py tools/
+COPY tools/backup.py tools/restore.py tools/migrate.py tools/check_env.py tools/bulk_images.py tools/approval_gate_report.py tools/import_projects.py tools/digest.py tools/
 COPY deploy/redirects.json deploy/redirects.json
 COPY --from=web /web/dist frontend/dist
 # Run as an unprivileged user; /data is the only writable place (mount a volume there).

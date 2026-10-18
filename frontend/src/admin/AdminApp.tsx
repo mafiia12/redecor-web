@@ -83,7 +83,7 @@ function Shell() {
         <NavLink to="/admin/documents" className={link}>Documents</NavLink>
         <NavLink to="/admin/testimonials" className={link}>Testimonials</NavLink>
         <NavLink to="/admin/offices" className={link}>Offices</NavLink>
-        {can(me, "editor") && <NavLink to="/admin/enquiries" className={link}>Enquiries</NavLink>}
+        {can(me, "admin") && <NavLink to="/admin/enquiries" className={link}>Enquiries</NavLink>}
         <NavLink to="/admin/system" className={link}>Status &amp; analytics</NavLink>
         {can(me, "admin") && <NavLink to="/admin/users" className={link}>Users</NavLink>}
         <span className="grow" />

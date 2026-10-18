@@ -9,13 +9,10 @@ from sqlalchemy.orm import Session, object_session, selectinload
 from ..config import settings
 from ..db import get_db
 from ..images import delete_if_orphan, probe, process_bytes, process_upload, quality_problems, sha256_of
-from ..models import Approval, AuditLog, Client, Enquiry, Office, Project, ProjectImage, SiteImage, User
-from ..notify import deliver
+from ..models import Approval, AuditLog, Client, Office, Project, ProjectImage, SiteImage, User
 from ..schemas import (
     ClientAdminOut,
     ClientIn,
-    EnquiryAdminOut,
-    EnquiryStatusIn,
     LoginIn,
     OfficeIn,
     OfficeOut,
@@ -554,44 +551,4 @@ def update_office(country: str, data: OfficeIn, db: Session = Depends(get_db), u
     return o
 
 
-# ---------- enquiries ----------
-def _enquiry_out(e: Enquiry) -> EnquiryAdminOut:
-    return EnquiryAdminOut.model_validate(e)
-
-
-@router.get("/enquiries", response_model=list[EnquiryAdminOut])
-def list_enquiries(db: Session = Depends(get_db), _: User = Depends(editor)):  # personal data: not for viewers
-    rows = db.scalars(select(Enquiry).order_by(Enquiry.created_at.desc()).limit(500))
-    return [_enquiry_out(e) for e in rows]
-
-
-@router.patch("/enquiries/{eid}", response_model=EnquiryAdminOut)
-def set_enquiry_status(
-    eid: int, data: EnquiryStatusIn, db: Session = Depends(get_db), user: User = Depends(editor)
-):
-    e = db.get(Enquiry, eid)
-    if not e:
-        raise HTTPException(404, "Enquiry not found")
-    e.status = data.status
-    audit(db, user, f"status:{data.status}", "enquiry", eid)
-    db.commit()
-    return _enquiry_out(e)
-
-
-@router.post("/enquiries/{eid}/notify", response_model=EnquiryAdminOut)
-def resend_notification(eid: int, db: Session = Depends(get_db), user: User = Depends(editor)):
-    """Retry the e-mail for one enquiry. An already delivered notification is never sent twice."""
-    e = db.get(Enquiry, eid)
-    if not e:
-        raise HTTPException(404, "Enquiry not found")
-    if e.notify_status == "sent":
-        raise HTTPException(409, "This notification was already delivered")
-    if e.notify_status in ("legacy",):
-        e.notify_status = "pending"
-    e.notify_attempts = min(e.notify_attempts, settings.notify_max_attempts - 1)  # allow one manual attempt
-    db.commit()
-    deliver(eid)
-    db.expire_all()
-    audit(db, user, "notify", "enquiry", eid)
-    db.commit()
-    return _enquiry_out(db.get(Enquiry, eid))
+# ---------- enquiries: see admin_crm.py ----------
