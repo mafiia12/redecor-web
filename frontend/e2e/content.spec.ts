@@ -75,3 +75,19 @@ test("approval gate: a published project appears only after its permission is re
   await expect(page.locator(".adm-approvals .adm-tag.ok").first()).toBeVisible();
   expect((await page.request.get(url)).status()).toBe(200);
 });
+
+test("import: CSV dry run lists problems, confirm creates drafts only", async ({ page }) => {
+  await login(page);
+  await page.goto("/admin/import");
+  const csv = "slug,title_en,country,type\ntest-project-import-1,Test Project Import 1,eg,office\n,,xx,castle\n";
+  await page.getByLabel("File (.xlsx, .csv or .json)").setInputFiles({ name: "projects.csv", mimeType: "text/csv", buffer: Buffer.from("﻿" + csv) });
+  await page.getByRole("button", { name: "1. Dry run" }).click();
+  await expect(page.getByRole("heading", { name: "Dry run: nothing has been saved" })).toBeVisible();
+  await expect(page.getByText(/country: Input should be/)).toBeVisible();
+  await page.getByRole("button", { name: "2. Confirm: create 1, update 0" }).click();
+  await expect(page.getByText(/Created 1, updated 0/)).toBeVisible();
+  const { token } = await (await page.request.post("/api/admin/login", { data: ADMIN })).json();
+  const list = await (await page.request.get("/api/admin/projects", { headers: { Authorization: `Bearer ${token}` } })).json();
+  const p = list.find((x: { slug: string }) => x.slug === "test-project-import-1");
+  expect(p.published).toBe(false);
+});

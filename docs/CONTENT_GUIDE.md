@@ -101,3 +101,33 @@ server refuse `0`). Before switching it on for an existing site, run
 **Admin → Readiness** lists every project with: title and description in AR/EN, cover, number of
 photos, all photos labelled, alt text EN/AR, approval, published, and **Ready**. Filter
 "not ready", sort by the number of missing items, and export to CSV or XLSX for follow-up.
+
+## 7. Importing projects from Excel / CSV / the portfolio manifest
+
+**Admin → Import projects** (or `python tools/import_projects.py --file <file>` on the server).
+
+1. Download the **Excel template**. The *Projects* sheet has the columns; the *Instructions* sheet
+   says what goes in each one and which are required (`title_en`, `country`, `type`). Dropdowns
+   limit `country`, `type`, `is_render` and `featured` to allowed values.
+2. One project per row. Leave a cell empty when the information is not confirmed: never guess.
+3. Upload the `.xlsx`, a `.csv` saved as **CSV UTF-8** (with or without BOM, Arabic is kept), or
+   the JSON manifest (`tools/portfolio_manifest.json`; extra keys such as `pdf` and `pages` are
+   ignored and reported).
+4. **Dry run** lists every row with its action (create / update / skip / error) and every bad
+   cell as `column: problem`. Nothing is saved.
+5. **Confirm** imports the valid rows. Rows with errors are left out.
+
+Rules:
+
+* New projects are always **drafts**. Publish them from the project editor after review, photos
+  and the client's permission (Approvals).
+* A row whose slug already exists is **skipped**, unless "Update existing projects" is ticked
+  (CLI: `--update-existing`). Then only the filled cells change; empty cells keep the current
+  values and the published status is never changed.
+* Before anything is written the database is backed up (admin page: SQLite copy next to the
+  database or in `BACKUP_DIR`; CLI: full `tools/backup.py` archive). Each import is written to the
+  import log (who, when, file, counts, backup file) and every created/updated project to the
+  audit log.
+
+CLI: `python tools/import_projects.py --file projects.xlsx` (dry run),
+`... --apply --as <your admin e-mail>` (import), `--template out.xlsx` (write the template).

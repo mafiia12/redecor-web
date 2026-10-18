@@ -12,7 +12,7 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from .. import attachments, bulk, private_files, sheets
+from .. import attachments, bulk, importer, private_files, sheets
 from ..config import settings
 from ..db import get_db
 from ..models import Approval, Client, Project, User
@@ -236,19 +236,20 @@ def readiness_rows(db: Session) -> list[dict]:
             "approved": current_status(db, "project", p.id) == "approved",
         }
         missing = [k for k, ok in checks.items() if not ok]
-        rows.append({"type": "project", "id": p.id, "slug": p.slug, "name": p.title_en, "image_count": len(imgs),
+        rows.append({"type": "project", "id": p.id, "slug": p.slug, "name": p.title_en, "name_ar": p.title_ar,
+                     "image_count": len(imgs),
                      **checks, "approval_status": current_status(db, "project", p.id), "published": p.published,
                      "missing": len(missing), "missing_items": ", ".join(missing), "ready": not missing})
     for c in db.scalars(select(Client).order_by(Client.sort_order, Client.id)):
         checks = {"logo": c.logo_image_id is not None, "approved": current_status(db, "client", c.id) == "approved"}
         missing = [k for k, ok in checks.items() if not ok]
-        rows.append({"type": "client", "id": c.id, "slug": "", "name": c.name, "image_count": 1 if c.logo_image_id else 0,
+        rows.append({"type": "client", "id": c.id, "slug": "", "name": c.name, "name_ar": "", "image_count": 1 if c.logo_image_id else 0,
                      **checks, "approval_status": current_status(db, "client", c.id), "published": c.published,
                      "missing": len(missing), "missing_items": ", ".join(missing), "ready": not missing})
     return rows
 
 
-READINESS_COLUMNS = ["type", "name", "slug", "title_en", "title_ar", "description_en", "description_ar", "cover_image",
+READINESS_COLUMNS = ["type", "name", "name_ar", "slug", "title_en", "title_ar", "description_en", "description_ar", "cover_image",
                      "image_count", "every_image_has_kind", "alt_text_en_ar", "logo", "approval_status", "published",
                      "missing", "missing_items", "ready"]
 
@@ -262,3 +263,49 @@ def readiness(format: str = "json", db: Session = Depends(get_db), _: User = Dep
     clients = [r for r in rows if r["type"] == "client"]
     return {"rows": rows, "summary": {"projects_ready": sum(r["ready"] for r in projects), "projects": len(projects),
                                       "clients_ready": sum(r["ready"] for r in clients), "clients": len(clients)}}
+
+
+# ---------- project import (Excel / CSV / JSON manifest) ----------
+IMPORT_MAX = 20 * 1024 * 1024
+
+
+def _import_rows(file: UploadFile) -> tuple[list, bytes]:
+    raw = file.file.read(IMPORT_MAX + 1)
+    if len(raw) > IMPORT_MAX:
+        raise HTTPException(413, "Import file is larger than 20 MB")
+    return importer.read(file.filename or "", raw), raw
+
+
+@router.get("/import/template")
+def import_template(_: User = Depends(editor)):
+    return Response(importer.template_xlsx(),
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="project-import-template.xlsx"'})
+
+
+@router.post("/import/plan")
+def import_plan(file: UploadFile = File(...), update_existing: bool = Form(False), db: Session = Depends(get_db),
+                _: User = Depends(editor)):
+    """Dry-run: nothing is written."""
+    rows, _raw = _import_rows(file)
+    planned = importer.plan(db, rows, update_existing)
+    return {"rows": importer.rows_json(planned), "summary": importer.summary(planned)}
+
+
+@router.post("/import/apply")
+def import_apply(file: UploadFile = File(...), update_existing: bool = Form(False), db: Session = Depends(get_db),
+                 user: User = Depends(editor)):
+    rows, _raw = _import_rows(file)
+    planned, backup = importer.apply(db, rows, user, update_existing, filename=file.filename or "import")
+    return {"rows": importer.rows_json(planned), "summary": importer.summary(planned),
+            "backup": Path(backup).name if backup else ""}
+
+
+@router.get("/import/log")
+def import_log(db: Session = Depends(get_db), _: User = Depends(viewer)):
+    from ..models import ImportLog
+
+    rows = db.scalars(select(ImportLog).order_by(ImportLog.id.desc()).limit(50))
+    return [{"at": r.at.isoformat(), "user": r.user_email, "kind": r.kind, "filename": r.filename, "created": r.created,
+             "updated": r.updated, "skipped": r.skipped, "errors": r.errors, "backup": Path(r.backup_file).name if r.backup_file else ""}
+            for r in rows]

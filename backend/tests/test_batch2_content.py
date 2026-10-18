@@ -248,6 +248,6 @@ def test_readiness_is_computed_and_exports(client, auth):
     assert row["ready"] and row["missing"] == 0
     x = client.get("/api/admin/readiness?format=xlsx", headers=auth)
     ws = load_workbook(io.BytesIO(x.content)).active
-    assert [c.value for c in ws[1]][:3] == ["type", "name", "slug"]
+    assert [c.value for c in ws[1]][:4] == ["type", "name", "name_ar", "slug"]
     csv_text = client.get("/api/admin/readiness?format=csv", headers=auth).content.decode("utf-8-sig")
     assert "ready-1" in csv_text

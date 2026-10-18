@@ -221,3 +221,137 @@ export function ReadinessAdmin() {
     </>
   );
 }
+
+/* ---------- Project import from Excel / CSV / JSON (dry-run first) ---------- */
+interface ImportRow {
+  row: number;
+  slug: string;
+  title_en: string;
+  action: "create" | "update" | "skip" | "error";
+  errors: string[];
+  notes: string[];
+}
+interface ImportResult {
+  rows: ImportRow[];
+  summary: Record<string, number>;
+  backup?: string;
+}
+interface ImportLogRow {
+  at: string;
+  user: string;
+  kind: string;
+  filename: string;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+  backup: string;
+}
+const IMPORT_TAG: Record<string, string> = { create: "ok", update: "ok", skip: "", error: "warn" };
+
+function ImportTable({ res }: { res: ImportResult }) {
+  return (
+    <>
+      <p>
+        {(["create", "update", "skip", "error"] as const).map((k) => (
+          <Fragment key={k}><span className={`adm-tag ${IMPORT_TAG[k]}`}>{k} {res.summary[k] ?? 0}</span>{" "}</Fragment>
+        ))}
+      </p>
+      <table className="adm-table adm-table--compact">
+        <thead><tr><th>Row</th><th>Slug</th><th>Title</th><th>Action</th><th>Problems / notes</th></tr></thead>
+        <tbody>
+          {res.rows.map((r) => (
+            <tr key={r.row}>
+              <td>{r.row}</td>
+              <td>{r.slug}</td>
+              <td>{r.title_en}</td>
+              <td><span className={`adm-tag ${IMPORT_TAG[r.action]}`}>{r.action}</span></td>
+              <td>{r.errors.length ? <span className="adm-no">{r.errors.join(" · ")}</span> : r.notes.join(" · ")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+export function ImportAdmin() {
+  const [file, setFile] = useState<File | null>(null);
+  const [update, setUpdate] = useState(false);
+  const [plan, setPlan] = useState<ImportResult | null>(null);
+  const [done, setDone] = useState<ImportResult | null>(null);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const log = useLoad<ImportLogRow[]>("/import/log");
+
+  async function run(step: "plan" | "apply") {
+    if (!file) return;
+    setErr("");
+    setBusy(true);
+    try {
+      const res = await api<ImportResult>(`/import/${step}`, multipart("POST", { update_existing: update }, { file }));
+      if (step === "plan") {
+        setPlan(res);
+        setDone(null);
+      } else {
+        setDone(res);
+        setPlan(null);
+        log.reload();
+      }
+    } catch (x) {
+      setErr(errorText(x));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <h1>Import projects</h1>
+      <p className="caption">
+        Fill the Excel template (one project per row; the Instructions sheet explains every column), or upload a CSV (UTF-8) or the JSON portfolio manifest.
+        New projects are created as <b>drafts</b>. Step 1 is a dry run that lists every problem by row and column; nothing is saved until you confirm.
+      </p>
+      <p><button className="btn btn--sm btn--outline" type="button" onClick={() => downloadFile("/import/template", "project-import-template.xlsx").catch((x) => setErr(errorText(x)))}>Download Excel template</button></p>
+      <form className="adm-card" onSubmit={(e) => { e.preventDefault(); run("plan"); }}>
+        <label className="f">File (.xlsx, .csv or .json)<input type="file" accept=".xlsx,.csv,.json,text/csv,application/json" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPlan(null); setDone(null); }} /></label>
+        <label className="adm-check" style={{ marginTop: 12 }}><input type="checkbox" checked={update} onChange={(e) => { setUpdate(e.target.checked); setPlan(null); }} /> Update existing projects (same slug): only the filled cells change</label>
+        <div style={{ marginTop: 12 }}><button className="btn" disabled={busy || !file}>{busy && !plan ? "Checking…" : "1. Dry run"}</button></div>
+      </form>
+      {err && <div className="adm-msg err" role="alert">{err}</div>}
+      {plan && (
+        <div className="adm-card" style={{ marginTop: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Dry run: nothing has been saved</h2>
+          <ImportTable res={plan} />
+          <div className="adm-row" style={{ marginTop: 12 }}>
+            <button className="btn" disabled={busy || !(plan.summary.create + plan.summary.update)} onClick={() => run("apply")}>
+              2. Confirm: create {plan.summary.create}, update {plan.summary.update}
+            </button>
+            <button className="btn btn--outline" onClick={() => setPlan(null)}>Cancel</button>
+            <span className="caption">Rows with errors are left out. The database is backed up automatically first.</span>
+          </div>
+        </div>
+      )}
+      {done && (
+        <div className="adm-card" style={{ marginTop: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Done</h2>
+          <div className="adm-msg">Created {done.summary.create}, updated {done.summary.update}. Backup made first: {done.backup || "n/a"}. <Link to="/admin/readiness">Check readiness</Link></div>
+          <ImportTable res={done} />
+        </div>
+      )}
+      {log.data && log.data.length > 0 && (
+        <div className="adm-card" style={{ marginTop: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Import log</h2>
+          <table className="adm-table adm-table--compact">
+            <thead><tr><th>When</th><th>Who</th><th>What</th><th>File</th><th>Created</th><th>Updated</th><th>Skipped</th><th>Errors</th><th>Backup</th></tr></thead>
+            <tbody>
+              {log.data.map((l, i) => (
+                <tr key={i}><td>{new Date(l.at).toLocaleString("en-GB")}</td><td>{l.user}</td><td>{l.kind}</td><td>{l.filename}</td><td>{l.created}</td><td>{l.updated}</td><td>{l.skipped}</td><td>{l.errors}</td><td>{l.backup}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
