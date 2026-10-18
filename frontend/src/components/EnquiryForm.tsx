@@ -218,8 +218,9 @@ export function EnquiryForm() {
       <div className="field">
         <label htmlFor="f-area">{f.area}</label>
         <div style={{ position: "relative" }}>
-          <input id="f-area" name="area" type="number" inputMode="decimal" min={0} className="input ltr-input" placeholder={f.areaPh} value={v.area} onChange={(e) => set("area", e.target.value)} aria-invalid={bad("area")} aria-describedby={desc("area")} style={{ paddingInlineEnd: 56 }} />
-          <span className="caption" style={{ position: "absolute", insetInlineEnd: 16, top: 16 }}>{f.unit}</span>
+          <input id="f-area" name="area" type="number" inputMode="decimal" min={0} className="input ltr-input" placeholder={f.areaPh} value={v.area} onChange={(e) => set("area", e.target.value)} aria-invalid={bad("area")} aria-describedby={desc("area")} style={{ paddingRight: 56 }} />
+          {/* the number reads left-to-right in both languages, so the unit sits on the physical right */}
+          <span className="caption" style={{ position: "absolute", right: 16, top: 16 }}>{f.unit}</span>
         </div>
         {errMsg("area")}
       </div>

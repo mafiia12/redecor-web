@@ -71,7 +71,8 @@ export function Header() {
   ];
   const bare = lang === "ar" ? pathname.replace(/^\/ar/, "") : pathname;
   const isActive = (m: string) => !m.startsWith("#") && bare.startsWith(m);
-  const theme = (mode === "dark" || dark) && !open ? "dark" : "light";
+  // the open menu sheet follows the site theme; closed, the bar also turns dark over dark sections
+  const theme = mode === "dark" || (dark && !open) ? "dark" : "light";
 
   return (
     <header ref={ref} className="header" data-theme={theme} data-hidden={hidden && !open}>

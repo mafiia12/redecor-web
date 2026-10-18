@@ -1,8 +1,10 @@
 import asyncio
-import os
 import logging
+import os
+import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 from xml.sax.saxutils import escape
 
 from fastapi import FastAPI, HTTPException, Request
@@ -11,19 +13,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
-import time
-from pathlib import Path
-
 from sqlalchemy import func, select, text
 
-from . import models  # noqa: F401  (register tables)
+from . import (
+    models,  # noqa: F401  (register tables)
+    seo,
+)
+from .alerts import alert
 from .config import settings
 from .db import Base, SessionLocal, engine, ensure_columns
-from . import seo
 from .models import Enquiry, Project
-from .routers import admin, admin_system, public
-from .alerts import alert
 from .notify import retry_pending
+from .routers import admin, admin_system, public
 from .security import password_problems
 from .seed import seed
 from .visibility import public_projects

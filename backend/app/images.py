@@ -35,7 +35,7 @@ def process_upload(db: Session, file: UploadFile, max_width: int = 2400) -> Imag
     except HTTPException:
         raise
     except (UnidentifiedImageError, OSError, PILImage.DecompressionBombError):
-        raise HTTPException(400, "The file is not a valid image.")
+        raise HTTPException(400, "The file is not a valid image.") from None
 
     has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
     img = img.convert("RGBA" if has_alpha else "RGB")
@@ -43,7 +43,8 @@ def process_upload(db: Session, file: UploadFile, max_width: int = 2400) -> Imag
     if w < 16 or h < 16:
         raise HTTPException(400, "Image is too small.")
 
-    color = "#%02X%02X%02X" % img.convert("RGB").resize((1, 1), PILImage.Resampling.BOX).getpixel((0, 0))
+    r, g, b = img.convert("RGB").resize((1, 1), PILImage.Resampling.BOX).getpixel((0, 0))
+    color = f"#{r:02X}{g:02X}{b:02X}"
     cap = min(w, max_width)
     widths = sorted({x for x in TARGET_WIDTHS if x < cap} | {cap})
 
@@ -56,7 +57,7 @@ def process_upload(db: Session, file: UploadFile, max_width: int = 2400) -> Imag
             variant.save(folder / f"{tw}.webp", "WEBP", quality=82, method=4)
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
-        raise HTTPException(400, "Could not process the image.")
+        raise HTTPException(400, "Could not process the image.") from None
 
     rec = Image(key=key, width=cap, height=round(h * cap / w), widths=",".join(map(str, widths)), color=color)
     db.add(rec)

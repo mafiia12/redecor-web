@@ -1,0 +1,10 @@
+line-length = 130
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "B", "S", "UP", "I"]
+# B008: FastAPI's Depends()/File() defaults are the framework idiom. S101: asserts in tests.
+ignore = ["B008", "S101", "E501", "UP017"]
+
+[lint.per-file-ignores]
+"tests/*" = ["S105", "S106", "S108", "S603", "S311"]

@@ -1,21 +1,24 @@
 import re
+
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from ..config import settings
 from ..db import get_db
 from ..images import delete_if_orphan, process_upload
 from ..models import AuditLog, Client, Enquiry, Office, Project, ProjectImage, SiteImage, User
+from ..notify import deliver
 from ..schemas import (
     ClientAdminOut,
     ClientIn,
     EnquiryAdminOut,
     EnquiryStatusIn,
     LoginIn,
-    PasswordChangeIn,
     OfficeIn,
     OfficeOut,
     OrderIn,
+    PasswordChangeIn,
     ProjectAdminOut,
     ProjectDetailOut,
     ProjectImageOut,
@@ -36,12 +39,10 @@ from ..security import (
     verify_password,
     viewer,
 )
-from ..config import settings
-from ..notify import deliver
 from ..serializers import cover_of, project_image_out
+from ..slots import SLOT_KEYS, SLOTS
 from ..visibility import TEST_SLUG_PREFIX, is_placeholder
 from .public import project_payload
-from ..slots import SLOT_KEYS, SLOTS
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 login_limiter = RateLimiter(limit=8, window_s=300)  # per IP

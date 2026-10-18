@@ -75,6 +75,7 @@ export default function Home() {
         </div>
       </section>
 
+      {!(data && data.projects.length === 0) && (
       <section className="section section--surface" aria-labelledby="projects-title">
         <div className="container">
           <SectionHead
@@ -114,6 +115,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       <Divisions />
       <HowWeWork />

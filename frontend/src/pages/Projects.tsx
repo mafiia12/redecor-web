@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
 import { WorkHero } from "../components/WorkHero";
 import { Segmented } from "../components/Filters";
@@ -10,7 +10,7 @@ const TYPES: ProjectType[] = ["residential", "hospitality", "retail", "office", 
 const COUNTRIES: Country[] = ["eg", "qa", "sa"];
 
 export default function Projects() {
-  const { t } = useLang();
+  const { t, lp } = useLang();
   const { data, error, reload } = useData();
   const [params, setParams] = useSearchParams();
   usePageMeta(`${t.projects.title} | ${t.brand}`, t.projects.description);
@@ -51,6 +51,7 @@ export default function Projects() {
       <WorkHero title={t.home.workTitle} sub={t.projects.description} bg={data?.site_images["projects-hero"]?.image ?? all.find((p) => p.cover)?.cover} target="work-grid" compact />
       <section className="section" id="work-grid" style={{ paddingBlock: "56px 96px" }}>
         <div className="container">
+          {all.length > 0 && (
           <div className="filters" style={{ marginBottom: 32 }}>
             {countries.length > 1 && <Segmented
               label={t.filters.country}
@@ -72,6 +73,7 @@ export default function Projects() {
             )}
             {data && <span className="caption count" aria-live="polite">{t.projects.count(list.length)}</span>}
           </div>
+          )}
 
           {!data && error ? (
             <div className="empty">
@@ -80,6 +82,12 @@ export default function Projects() {
             </div>
           ) : !data ? (
             <ProjectGridSkeleton />
+          ) : all.length === 0 ? (
+            <div className="empty">
+              <h2>{t.projects.soonTitle}</h2>
+              <p className="lead">{t.projects.soonSub}</p>
+              <Link to={lp("/contact")} className="btn">{t.cta}</Link>
+            </div>
           ) : list.length === 0 ? (
             <div className="empty">
               <h2>{t.projects.emptyTitle}</h2>
