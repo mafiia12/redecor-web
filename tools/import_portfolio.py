@@ -27,35 +27,54 @@ MIN_SIDE = 700  # ignore logos / icons smaller than this
 MAX_W = 2400
 
 
+def _decode(doc, xref):
+    """Decode one embedded picture quickly: use the original JPEG/PNG bytes when possible (no re-encoding)."""
+    try:
+        d = doc.extract_image(xref)
+        if d.get("ext") in ("jpeg", "jpg", "png") and not d.get("smask") and d.get("colorspace") in (1, 3):
+            im = Image.open(io.BytesIO(d["image"]))
+            if im.format == "JPEG":
+                im.draft("RGB", (MAX_W, MAX_W))  # decode at reduced size: much faster for huge photos
+            return im.convert("RGB")
+    except Exception:
+        pass
+    pix = fitz.Pixmap(doc, xref)  # other formats (JPX, CMYK, masks): let MuPDF convert
+    if pix.n - pix.alpha > 3:
+        pix = fitz.Pixmap(fitz.csRGB, pix)
+    if pix.alpha:
+        pix = fitz.Pixmap(pix, 0)
+    return Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+
+
 def page_images(doc, page, seen: set[str], all_images: bool = False) -> list[Image.Image]:
     """Pictures on a page.
 
     A picture only counts as a photo when it covers a real share of the page. Pages built from many small
     pieces (tiles / strips of one big render) are rendered as a whole instead of returning fragments."""
     page_area = page.rect.width * page.rect.height
-    found = []  # (share of page, pixmap)
-    for info in page.get_images(full=True):
-        xref = info[0]
+    found = []  # (share of page, xref)
+    for info in page.get_images(full=True):  # info = (xref, smask, width, height, ...): no decoding needed
+        xref, w, h = info[0], info[2], info[3]
+        if min(w, h) < MIN_SIDE:
+            continue
         try:
-            pix = fitz.Pixmap(doc, xref)
-            if pix.n - pix.alpha > 3:  # CMYK etc.
-                pix = fitz.Pixmap(fitz.csRGB, pix)
-            if min(pix.width, pix.height) < MIN_SIDE:
-                continue
             rects = page.get_image_rects(xref)
-            share = max((r.width * r.height for r in rects), default=0) / page_area if page_area else 0
-            found.append((share, pix))
         except Exception:
             continue
+        share = max((r.width * r.height for r in rects), default=0) / page_area if page_area else 0
+        found.append((share, xref))
     photos = sorted((f for f in found if f[0] >= 0.12), key=lambda t: -t[0])
     imgs = []
     if photos:
-        for _, pix in (photos if all_images else photos[:1]):
-            imgs.append(Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB"))
+        for _, xref in (photos if all_images else photos[:1]):
+            try:
+                imgs.append(_decode(doc, xref))
+            except Exception as e:
+                print(f"    ! could not decode a picture on this page: {e}")
     else:  # no clear photo (tiles, text page, vector art): render the page itself
         zoom = 2000 / page.rect.width
         pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
-        img = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB")
+        img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
         if img.getextrema() != ((255, 255),) * 3:  # skip blank pages
             imgs.append(img)
     out = []
@@ -110,8 +129,10 @@ def collect(project: dict, pdf_dir: Path, max_images: int):
         doc = fitz.open(path)
         first, last = src["pages"]
         for n in range(first, min(last, len(doc)) + 1):
+            print(f"\r  page {n}/{min(last, len(doc))}   ", end="", flush=True)
             for k, img in enumerate(page_images(doc, doc[n - 1], seen, project.get("all_images", False))):
                 out.append((f"{n}" if k == 0 else f"{n}-{k + 1}", img, bool(src.get("render")), ""))
+    print("\r" + " " * 30 + "\r", end="")
     if len(out) > max_images:  # keep an even spread through the project
         step = len(out) / max_images
         out = [out[int(i * step)] for i in range(max_images)]
