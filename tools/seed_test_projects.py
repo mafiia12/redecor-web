@@ -4,6 +4,7 @@
     python tools/seed_test_projects.py --api http://localhost:8001 --email you@example.com --delete   # remove them again
 
 The pictures are drawn by this script (not real photos), every one is stamped "TEST IMAGE".
+The server never shows "test-project-*" pages publicly unless ALLOW_TEST_CONTENT=1 is set (local preview only).
 """
 import argparse
 import getpass
@@ -182,7 +183,8 @@ def main():
             s.patch(f"{a.api}/api/admin/project-images/{rec['id']}", json=patch)
         s.post(f"{a.api}/api/admin/projects/{pid}/logo", files={"file": ("logo.png", logo(p["client_name"].upper()), "image/png")})
         print("created", p["slug"])
-    print("Open /projects and /projects/test-project-a. Remove later with --delete.")
+    print("Created. They are visible only on a server started with ALLOW_TEST_CONTENT=1 (never in production).")
+    print("Preview them in /admin (Preview button). Remove with --delete.")
 
 
 if __name__ == "__main__":

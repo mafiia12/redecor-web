@@ -21,6 +21,10 @@ export interface ProjectCard {
   is_render: boolean;
   featured: boolean;
   cover: Img | null;
+  tagline_en: string;
+  tagline_ar: string;
+  scope_en: string;
+  scope_ar: string;
 }
 export interface GalleryImage {
   id: number;
@@ -37,8 +41,6 @@ export interface ProjectDetail extends ProjectCard {
   summary_en: string;
   summary_ar: string;
   area_m2: number | null;
-  scope_en: string;
-  scope_ar: string;
   tagline_en: string;
   tagline_ar: string;
   story_en: string;
@@ -49,6 +51,23 @@ export interface ProjectDetail extends ProjectCard {
   logo: Img | null;
   gallery: GalleryImage[];
   related: ProjectCard[];
+  prev: ProjectCard | null;
+  next: ProjectCard | null;
+}
+export interface Testimonial {
+  id: number;
+  quote_en: string;
+  quote_ar: string;
+  author: string;
+  role_en: string;
+  role_ar: string;
+  company: string;
+}
+export interface SiteDocument {
+  slot: string;
+  url: string;
+  filename: string;
+  size: number;
 }
 export interface Client {
   id: number;
@@ -78,6 +97,8 @@ export interface Bootstrap {
   site_images: Record<string, SiteImage>;
   clients: Client[];
   projects: ProjectCard[];
+  testimonials: Testimonial[];
+  documents: Record<string, SiteDocument>;
 }
 
 export class ApiError extends Error {
@@ -107,7 +128,7 @@ export async function request<T>(url: string, init: RequestInit = {}, token?: st
   return data as T;
 }
 
-const CACHE_KEY = "redecor:bootstrap:v1";
+const CACHE_KEY = "redecor:bootstrap:v2";
 
 /** Last successful payload, so repeat visits paint instantly (and still revalidate). */
 export function cachedBootstrap(): Bootstrap | null {
@@ -151,6 +172,8 @@ export interface EnquiryPayload {
   lang: "en" | "ar";
   consent: boolean;
   website: string;
+  elapsed_ms: number;
+  source: string;
 }
 export const sendEnquiry = (p: EnquiryPayload) =>
   request<{ ok: true }>("/api/enquiries", { method: "POST", body: JSON.stringify(p) });

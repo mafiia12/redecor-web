@@ -243,6 +243,7 @@ def png_bytes(im):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--publish", action="store_true", help="publish the logos immediately (only when every client approved)")
     ap.add_argument("--pdf-dir", required=True)
     ap.add_argument("--api", default="http://localhost:8000")
     ap.add_argument("--email")
@@ -327,13 +328,16 @@ def main():
             if c["name"].startswith("["):
                 s.delete(f"{a.api}/api/admin/clients/{c['id']}")
     for i, im in enumerate(logos):
-        r = s.post(f"{a.api}/api/admin/clients", json={"name": label(i), "sort_order": i + 1})
+        # Imported logos stay hidden until each client's permission is confirmed and they are published in /admin.
+        r = s.post(f"{a.api}/api/admin/clients", json={"name": label(i), "sort_order": i + 1, "published": a.publish})
         if r.status_code != 201:
             print("  ! create failed:", r.text)
             continue
         cid = r.json()["id"]
         r = s.post(f"{a.api}/api/admin/clients/{cid}/logo", files={"file": (f"{i + 1:02d}.png", png_bytes(im), "image/png")})
         print(f"  {'✓' if r.status_code == 200 else '!'} {label(i)}")
+    if not a.publish:
+        print("Imported as UNPUBLISHED. Publish each logo in /admin > Clients once the client has approved its use.")
 
 
 if __name__ == "__main__":

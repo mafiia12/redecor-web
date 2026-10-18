@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+import { useEffect, type CSSProperties } from "react";
+import { setWhatsAppContext } from "../components/WhatsApp";
+import { track } from "../lib/analytics";
 import { Link, useParams } from "react-router-dom";
 import { ProjectTile } from "../components/Cards";
 import { SitePhoto } from "../components/Photo";
@@ -14,15 +16,32 @@ const HINTS: Record<string, string> = {
   "project-management": "Service hero: project team reviewing drawings on site",
 };
 
+const SCOPE_MATCH: Record<string, RegExp> = {
+  contracting: /contract|civil|construct|structur|execution|مقاول|تنفيذ|إنشاء/i,
+  fitout: /fit-?out|finish|interior|joinery|تشطيب|تجهيز|داخلي/i,
+  supply: /supply|procure|furnitur|توريد|مشتريات|أثاث/i,
+  "project-management": /manage|supervis|إدارة|إشراف/i,
+};
+
 export default function ServiceDetail() {
   const { slug } = useParams();
   const { t, lang, lp } = useLang();
   const { data } = useData();
   const s = services[lang].find((x) => x.slug === slug);
   usePageMeta(s ? `${s.title} | ${t.brand}` : t.brand, s?.text);
+  useEffect(() => {
+    if (!s) return;
+    track("service_view");
+    setWhatsAppContext(s.title);
+    return () => setWhatsAppContext("");
+  }, [s?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!s) return <NotFound />;
 
-  const related = (data?.projects ?? []).slice(0, 3);
+  // Related work = projects whose recorded scope mentions this service; otherwise the latest featured ones.
+  const all = data?.projects ?? [];
+  const byScope = all.filter((p) => SCOPE_MATCH[s.slug]?.test(`${p.scope_en} ${p.scope_ar}`));
+  const related = (byScope.length ? byScope : all.filter((p) => p.featured)).slice(0, 4);
   return (
     <>
       <section className="page-head">
@@ -31,7 +50,7 @@ export default function ServiceDetail() {
           <h1 className="display">{s.title}</h1>
           <p className="lead">{s.text}</p>
           <div className="btn-row btn-row--stack" style={{ marginTop: 16 }}>
-            <Link to={lp("/contact")} className="btn">{t.cta}</Link>
+            <Link to={`${lp("/contact")}?about=${encodeURIComponent(s.title)}&ref=${encodeURIComponent(`/services/${s.slug}`)}`} className="btn" data-track="cta">{t.cta}</Link>
             <a href="#related" className="link">{t.services.relatedProjects}</a>
           </div>
         </div>

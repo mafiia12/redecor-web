@@ -1,27 +1,84 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, errorText, form, json, type AdminImage, type AdminProject, useLoad } from "./api";
+import { api, can, errorText, form, json, type AdminImage, type AdminProject, useLoad, useMe } from "./api";
 
 export function ProjectsAdmin() {
-  const { data, error } = useLoad<AdminProject[]>("/projects");
+  const me = useMe();
+  const { data, error, reload } = useLoad<AdminProject[]>("/projects");
+  const [q, setQ] = useState("");
+  const [show, setShow] = useState<"all" | "public" | "hidden">("all");
+  const [order, setOrder] = useState<number[] | null>(null);
+  const [msg, setMsg] = useState("");
+  const list = data ?? [];
+  const byId = new Map(list.map((p) => [p.id, p]));
+  const ids = order ?? list.map((p) => p.id);
+  const rows = ids
+    .map((id) => byId.get(id)!)
+    .filter(Boolean)
+    .filter((p) => show === "all" || (show === "public" ? p.is_public : !p.is_public))
+    .filter((p) => !q || `${p.title_en} ${p.title_ar} ${p.city_en} ${p.slug}`.toLowerCase().includes(q.toLowerCase()));
+  const move = (id: number, d: number) => {
+    const next = [...ids];
+    const i = next.indexOf(id);
+    const j = i + d;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    setOrder(next);
+  };
+  async function saveOrder() {
+    try {
+      await api("/projects-order", json("PUT", { ids }));
+      setOrder(null);
+      setMsg("Order saved.");
+      reload();
+    } catch (e) {
+      setMsg(errorText(e));
+    }
+  }
+  const editor = can(me, "editor");
   return (
     <>
       <div className="adm-bar">
         <h1>Projects</h1>
-        <Link className="btn" to="/admin/projects/new">New project</Link>
+        {editor && <Link className="btn" to="/admin/projects/new">New project</Link>}
       </div>
-      {error && <div className="adm-msg err">{error}</div>}
+      {(error || msg) && <div className={`adm-msg${error ? " err" : ""}`}>{error || msg}</div>}
+      <div className="adm-row" style={{ marginBottom: 12 }}>
+        <input className="input" style={{ maxWidth: 280 }} placeholder="Search title, city or slug" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search projects" />
+        <select className="select" style={{ width: 170 }} value={show} onChange={(e) => setShow(e.target.value as typeof show)} aria-label="Show">
+          <option value="all">All ({list.length})</option>
+          <option value="public">On the site ({list.filter((p) => p.is_public).length})</option>
+          <option value="hidden">Hidden ({list.filter((p) => !p.is_public).length})</option>
+        </select>
+        {order && editor && (
+          <>
+            <button className="btn btn--sm" onClick={saveOrder}>Save order</button>
+            <button className="btn btn--sm btn--outline" onClick={() => setOrder(null)}>Discard</button>
+          </>
+        )}
+      </div>
       <table className="adm-table">
-        <thead><tr><th></th><th>Title</th><th>Country</th><th>Type</th><th>Photos</th><th>Status</th></tr></thead>
+        <thead><tr><th></th><th>Title</th><th>Country</th><th>Type</th><th>Photos</th><th>Complete</th><th>Status</th>{editor && <th>Order</th>}</tr></thead>
         <tbody>
-          {(data ?? []).map((p) => (
+          {rows.map((p) => (
             <tr key={p.id}>
               <td>{p.cover ? <img className="adm-thumb" src={p.cover.src} alt="" /> : <span className="adm-thumb" />}</td>
-              <td><Link to={`/admin/projects/${p.id}`}>{p.title_en}</Link></td>
+              <td><Link to={`/admin/projects/${p.id}`}>{p.title_en}</Link><div className="caption">{p.slug}</div></td>
               <td>{p.country.toUpperCase()}</td>
               <td>{p.type}</td>
               <td>{p.images.length}</td>
-              <td><span className={`adm-tag ${p.published ? "ok" : "warn"}`}>{p.published ? "Published" : "Hidden"}</span></td>
+              <td title={p.missing.length ? `Missing: ${p.missing.join(", ")}` : "Complete"}>
+                <span className="adm-meter"><span style={{ width: `${p.completeness}%` }} /></span> {p.completeness}%
+              </td>
+              <td>
+                <span className={`adm-tag ${p.is_public ? "ok" : "warn"}`}>{p.is_public ? "On the site" : p.published ? "Hidden (test/placeholder)" : "Draft"}</span>
+              </td>
+              {editor && (
+                <td className="adm-row" style={{ gap: 4 }}>
+                  <button className="btn btn--sm btn--outline" onClick={() => move(p.id, -1)} aria-label={`Move ${p.title_en} up`} disabled={!!q || show !== "all"}>↑</button>
+                  <button className="btn btn--sm btn--outline" onClick={() => move(p.id, 1)} aria-label={`Move ${p.title_en} down`} disabled={!!q || show !== "all"}>↓</button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -30,9 +87,9 @@ export function ProjectsAdmin() {
   );
 }
 
-const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images" | "logo"> = {
+const EMPTY: Omit<AdminProject, "id" | "slug" | "cover" | "images" | "logo" | "completeness" | "missing" | "is_public"> = {
   title_en: "", title_ar: "", summary_en: "", summary_ar: "", city_en: "", city_ar: "", country: "eg", type: "residential",
-  year: null, area_m2: null, scope_en: "", scope_ar: "", tagline_en: "", tagline_ar: "", details_en: "", details_ar: "", story_en: "", story_ar: "", client_name: "", is_render: false, featured: true, published: true, sort_order: 0,
+  year: null, area_m2: null, scope_en: "", scope_ar: "", tagline_en: "", tagline_ar: "", details_en: "", details_ar: "", story_en: "", story_ar: "", client_name: "", is_render: false, featured: true, published: false, sort_order: 0,
 };
 
 export function ProjectEdit() {
@@ -73,7 +130,9 @@ export function ProjectEdit() {
   }
 
   async function remove() {
-    if (!p || !confirm(`Delete "${p.title_en}" and all its photos? This cannot be undone.`)) return;
+    if (!p) return;
+    const typed = prompt(`Delete "${p.title_en}" and all its photos? This cannot be undone.\n\nType the project title to confirm:`);
+    if (typed?.trim() !== p.title_en.trim()) return;
     try {
       await api(`/projects/${p.id}`, { method: "DELETE" });
       nav("/admin/projects");
@@ -146,8 +205,18 @@ export function ProjectEdit() {
     <>
       <div className="adm-bar">
         <h1>{isNew ? "New project" : v.title_en || "Project"}</h1>
-        <Link to="/admin/projects">← All projects</Link>
+        <div className="adm-row">
+          {p && <Link className="btn btn--sm btn--outline" to={`/admin/projects/${p.id}/preview`}>Preview</Link>}
+          {p && p.is_public && <a className="btn btn--sm btn--outline" href={`/projects/${p.slug}`} target="_blank" rel="noreferrer">View live ↗</a>}
+          <Link to="/admin/projects">← All projects</Link>
+        </div>
       </div>
+      {p && (
+        <p className="caption" style={{ marginTop: -8 }}>
+          {p.is_public ? "Visible on the site." : p.published ? "Published but hidden (test project or [placeholder] text)." : "Draft: only visible here and in Preview."}{" "}
+          {p.missing.length > 0 && <>Still missing: {p.missing.join(", ")}. Photos are optional; a text-only page is fine.</>}
+        </p>
+      )}
       {msg && <div className={`adm-msg${msg.ok ? "" : " err"}`} role="status">{msg.text}</div>}
 
       <div className="adm-card">

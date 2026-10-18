@@ -15,7 +15,7 @@ interface LangCtx {
 }
 const LangContext = createContext<LangCtx | null>(null);
 
-export function LangProvider({ lang, children }: { lang: Lang; children: ReactNode }) {
+export function LangProvider({ lang, children, syncDocument = true }: { lang: Lang; children: ReactNode; syncDocument?: boolean }) {
   const { pathname, search, hash } = useLocation();
   const value = useMemo<LangCtx>(() => {
     const bare = lang === "ar" ? pathname.replace(/^\/ar(?=\/|$)/, "") || "/" : pathname;
@@ -30,9 +30,10 @@ export function LangProvider({ lang, children }: { lang: Lang; children: ReactNo
   }, [lang, pathname, search, hash]);
 
   useEffect(() => {
+    if (!syncDocument) return;
     document.documentElement.lang = lang;
     document.documentElement.dir = value.dir;
-  }, [lang, value.dir]);
+  }, [lang, value.dir, syncDocument]);
 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
@@ -89,7 +90,41 @@ export function useData(): DataCtx {
 export const waDigits = (n: string) => n.replace(/\D/g, "");
 /** Only real-looking numbers become links (placeholders like "[+20 XXX]" do not). */
 export const isRealNumber = (n: string) => !n.includes("[") && waDigits(n).length >= 8;
-export const waLink = (n: string) => `https://wa.me/${waDigits(n)}`;
+export const waLink = (n: string, text?: string) =>
+  `https://wa.me/${waDigits(n)}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+
+/** Localized text plus the attributes it needs: English shown inside the Arabic site is marked lang="en" dir="ltr"
+ *  so it reads and aligns correctly (a controlled fallback, never a silent mix). */
+export function loc<T extends object>(obj: T, field: string, lang: Lang): { text: string; attrs: { lang?: string; dir?: "ltr" } } {
+  const rec = obj as Record<string, unknown>;
+  const ar = String(rec[`${field}_ar`] ?? "");
+  const en = String(rec[`${field}_en`] ?? "");
+  if (lang === "ar" && !ar && en) return { text: en, attrs: { lang: "en", dir: "ltr" } };
+  return { text: lang === "ar" ? ar : en, attrs: {} };
+}
+
+const filled = (v?: string) => !!v && !v.includes("[");
+
+/** Offices worth showing publicly: the ones with a confirmed address. */
+export function visibleOffices(offices: Office[]): Office[] {
+  return offices.filter((o) => filled(o.address_en) || filled(o.address_ar));
+}
+
+/** WhatsApp destinations: one row per distinct number. Offices that share a number share one row
+ *  (so a Qatar label is never shown on an Egyptian number). */
+export function whatsappContacts(offices: Office[], names: Record<string, string>): { label: string; num: string }[] {
+  const byNum = new Map<string, string[]>();
+  for (const o of offices) {
+    const num = o.whatsapp || o.phone;
+    if (!isRealNumber(num)) continue;
+    const key = waDigits(num);
+    byNum.set(key, [...(byNum.get(key) ?? []), o.country]);
+  }
+  return [...byNum.entries()].map(([digits, countries]) => {
+    const office = offices.find((o) => waDigits(o.whatsapp || o.phone) === digits)!;
+    return { label: countries.map((c) => names[c] ?? c).join(" · "), num: office.whatsapp || office.phone };
+  });
+}
 
 export function usePageMeta(title: string, description?: string) {
   useEffect(() => {

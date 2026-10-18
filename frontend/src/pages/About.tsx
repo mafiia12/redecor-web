@@ -1,9 +1,10 @@
 import { Divisions } from "../components/Divisions";
+import { STAT_CONFIRMED } from "../content";
 import { OfficeCard } from "../components/OfficeCard";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
 import { Reveal } from "../components/Reveal";
-import { useData, useLang, usePageMeta } from "../lib/context";
+import { useData, useLang, usePageMeta, visibleOffices } from "../lib/context";
 
 export default function About() {
   const { t } = useLang();
@@ -34,7 +35,7 @@ export default function About() {
         <div className="container">
           <Reveal>
             <dl className="stats">
-              {t.about.stats.map(([n, label]) => (
+              {t.about.stats.filter((_, i) => STAT_CONFIRMED[i]).map(([n, label]) => (
                 <div key={label}>
                   <dd className="stats__n">{n}</dd>
                   <dt className="stats__l">{label}</dt>
@@ -65,7 +66,7 @@ export default function About() {
             <p className="lead">{t.about.officesSub}</p>
           </Reveal>
           <div className="grid grid--2" style={{ gap: 24 }}>
-            {(data?.offices ?? []).map((o) => (
+            {visibleOffices(data?.offices ?? []).map((o) => (
               <OfficeCard key={o.country} office={o} />
             ))}
           </div>

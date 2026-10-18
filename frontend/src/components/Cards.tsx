@@ -1,27 +1,7 @@
 import { Link } from "react-router-dom";
 import type { ProjectCard as ProjectCardData } from "../lib/api";
-import { pick, useLang } from "../lib/context";
-import { Photo, SitePhoto } from "./Photo";
-
-export function ProjectCard({ p, sizes = "(min-width:1000px) 384px, (min-width:640px) 50vw, 100vw" }: { p: ProjectCardData; sizes?: string }) {
-  const { lang, t, lp } = useLang();
-  const meta = [pick(p, "city", lang), t.types[p.type], p.year].filter(Boolean).join(" · ");
-  const title = pick(p, "title", lang);
-  return (
-    <Link to={lp(`/projects/${p.slug}`)} className="pcard">
-      {p.cover && (
-        <div className="pcard__media">
-          <Photo img={p.cover} alt={title} ratio="4/5" hint={t.projects.imgEmpty} sizes={sizes} />
-          {p.is_render && <span className="badge">{t.projects.render}</span>}
-        </div>
-      )}
-      <div className="pcard__body">
-        <span className="pcard__title">{title}</span>
-        <span className="caption">{meta}</span>
-      </div>
-    </Link>
-  );
-}
+import { loc, useLang } from "../lib/context";
+import { Photo } from "./Photo";
 
 export function ProjectGridSkeleton({ n = 6 }: { n?: number }) {
   return (
@@ -33,34 +13,34 @@ export function ProjectGridSkeleton({ n = 6 }: { n?: number }) {
   );
 }
 
-export function ServiceTile({ to, title, text, slot, hint }: { to: string; title: string; text: string; slot: string; hint: string }) {
-  const { t } = useLang();
-  return (
-    <Link to={to} className="stile">
-      <div className="stile__media">
-        <SitePhoto slot={slot} ratio="4/3" hint={hint} alt={title} sizes="(min-width:1000px) 384px, (min-width:640px) 50vw, 100vw" />
-      </div>
-      <div className="stile__body">
-        <span className="stile__title">{title}</span>
-        <span className="stile__text">{text}</span>
-        <span className="stile__more">{t.learnMore}</span>
-      </div>
-    </Link>
-  );
-}
-
-/** Dense mosaic tile: image only, title and year appear on hover (always visible on touch screens). */
+/** Mosaic tile. With a cover photo: image with the title on hover. Without one (photos come later):
+ *  a typographic tile built only from the project's published facts. Same grid, so photos can be added any time. */
 export function ProjectTile({ p }: { p: ProjectCardData }) {
   const { lang, t, lp } = useLang();
-  const title = pick(p, "title", lang);
-  const meta = [p.year, pick(p, "city", lang), t.types[p.type]].filter(Boolean)[0] ?? t.types[p.type];
+  const title = loc(p, "title", lang);
+  const city = loc(p, "city", lang);
+  const tagline = loc(p, "tagline", lang);
+  const where = [city.text, t.countries[p.country]].filter(Boolean).join(lang === "ar" ? "، " : ", ");
+  if (!p.cover) {
+    return (
+      <Link to={lp(`/projects/${p.slug}`)} className="tile tile--type">
+        <span className="tile__kind">{t.types[p.type]}</span>
+        <span className="tile__name" {...title.attrs}>{title.text}</span>
+        {tagline.text && <span className="tile__line" {...tagline.attrs}>{tagline.text}</span>}
+        <span className="tile__foot">
+          <span>{[where, p.year].filter(Boolean).join(" · ")}</span>
+          <span className="tile__arrow" aria-hidden="true">→</span>
+        </span>
+      </Link>
+    );
+  }
+  const meta = [p.year, city.text, t.types[p.type]].filter(Boolean)[0] ?? t.types[p.type];
   return (
-    <Link to={lp(`/projects/${p.slug}`)} className={`tile${p.cover ? "" : " tile--text"}`} aria-label={title}>
-      {!p.cover && <span className="tile__name">{title}</span>}
-      <Photo img={p.cover} alt={title} ratio="5/4" sizes="(min-width:1100px) 25vw, (min-width:700px) 33vw, 50vw" />
+    <Link to={lp(`/projects/${p.slug}`)} className="tile" aria-label={title.text}>
+      <Photo img={p.cover} alt={title.text} ratio="5/4" sizes="(min-width:1100px) 25vw, (min-width:700px) 33vw, 50vw" />
       {p.is_render && <span className="badge badge--sm">{t.projects.renderShort}</span>}
       <span className="tile__veil">
-        <b>{title}</b>
+        <b {...title.attrs}>{title.text}</b>
         <span>{meta}</span>
       </span>
     </Link>

@@ -32,7 +32,19 @@ export default function Projects() {
   const all = data?.projects ?? [];
   const countries = COUNTRIES.filter((c) => all.some((p) => p.country === c));
   const types = TYPES.filter((x) => all.some((p) => p.type === x));
-  const list = (data?.projects ?? []).filter((p) => (country === "all" || p.country === country) && (type === "all" || p.type === type));
+  const q = (params.get("q") ?? "").trim();
+  const needle = q.toLowerCase();
+  const matches = (p: (typeof all)[number]) =>
+    !needle ||
+    [p.title_en, p.title_ar, p.city_en, p.city_ar, p.tagline_en, p.tagline_ar, t.types[p.type], t.countries[p.country]]
+      .some((v) => v?.toLowerCase().includes(needle));
+  const list = all.filter((p) => (country === "all" || p.country === country) && (type === "all" || p.type === type) && matches(p));
+  const setQuery = (value: string) => {
+    const next = new URLSearchParams(params);
+    if (value.trim()) next.set("q", value);
+    else next.delete("q");
+    setParams(next, { replace: true });
+  };
 
   return (
     <>
@@ -52,6 +64,12 @@ export default function Projects() {
               onChange={(v) => update("type", v)}
               options={[{ value: "all" as const, label: t.filters.all }, ...types.map((v) => ({ value: v, label: t.types[v] }))]}
             />
+            {all.length > 6 && (
+              <label className="search">
+                <span className="sr-only">{t.projects.search}</span>
+                <input type="search" className="search__input" placeholder={t.projects.searchPh} value={q} onChange={(e) => setQuery(e.target.value)} maxLength={60} />
+              </label>
+            )}
             {data && <span className="caption count" aria-live="polite">{t.projects.count(list.length)}</span>}
           </div>
 

@@ -13,6 +13,23 @@ export default function EnquiriesAdmin() {
       setMsg(errorText(x));
     }
   }
+  async function resend(e: AdminEnquiry) {
+    try {
+      const u = await api<AdminEnquiry>(`/enquiries/${e.id}/notify`, { method: "POST" });
+      setData((d) => d?.map((x) => (x.id === u.id ? u : x)) ?? d);
+      setMsg(u.notify_status === "sent" ? "" : `E-mail not sent: ${u.notify_error || u.notify_status}`);
+    } catch (x) {
+      setMsg(errorText(x));
+    }
+  }
+  const NOTIFY: Record<string, [string, string]> = {
+    sent: ["ok", "E-mailed"],
+    failed: ["warn", "E-mail failed"],
+    not_configured: ["warn", "E-mail not configured"],
+    pending: ["", "E-mail pending"],
+    sending: ["", "Sending…"],
+    legacy: ["", "Before e-mail alerts"],
+  };
   const fmt = (s: string) => new Date(s).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
   return (
@@ -43,6 +60,12 @@ export default function EnquiriesAdmin() {
               {e.area_m2 != null && <span className="adm-tag">{e.area_m2} m²</span>}
               <span className="adm-tag">prefers {e.contact_method}</span>
               <span className="adm-tag">{e.lang}</span>
+              {NOTIFY[e.notify_status] && (
+                <span className={`adm-tag ${NOTIFY[e.notify_status][0]}`} title={e.notify_error || undefined}>{NOTIFY[e.notify_status][1]}</span>
+              )}
+              {["failed", "not_configured", "pending"].includes(e.notify_status) && (
+                <button className="btn btn--sm btn--outline" onClick={() => resend(e)}>Retry e-mail</button>
+              )}
             </div>
             {e.message && <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{e.message}</p>}
           </article>

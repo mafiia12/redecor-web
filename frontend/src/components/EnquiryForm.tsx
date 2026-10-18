@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { track } from "../lib/analytics";
 import { ApiError, sendEnquiry, type Country } from "../lib/api";
 import { useLang } from "../lib/context";
 
@@ -36,7 +37,12 @@ function validate(v: Values): Partial<Record<Field, true>> {
 export function EnquiryForm() {
   const { t, lang, lp } = useLang();
   const f = t.form;
-  const [v, setV] = useState<Values>(BLANK);
+  const [params] = useSearchParams();
+  // Arriving from a project or service page (?about=…&ref=/projects/x): keep that context with the enquiry.
+  const about = (params.get("about") ?? "").slice(0, 160);
+  const ref = /^\/[a-z0-9\-/]*$/.test(params.get("ref") ?? "") ? params.get("ref")! : "";
+  const [v, setV] = useState<Values>(() => ({ ...BLANK, message: about ? `${f.aboutPrefix} ${about}\n` : "" }));
+  const started = useRef(Date.now());
   const [errs, setErrs] = useState<Partial<Record<Field, true>>>({});
   const [codeTouched, setCodeTouched] = useState(false);
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
@@ -68,6 +74,7 @@ export function EnquiryForm() {
       return;
     }
     setState("sending");
+    track("enquiry_submit");
     try {
       await sendEnquiry({
         name: v.name.trim(),
@@ -82,7 +89,10 @@ export function EnquiryForm() {
         lang,
         consent: v.consent,
         website: v.website,
+        elapsed_ms: Date.now() - started.current,
+        source: ref,
       });
+      track("enquiry_success");
       setState("done");
       window.scrollTo({ top: form.current ? form.current.getBoundingClientRect().top + window.scrollY - 140 : 0, behavior: "smooth" });
     } catch (err) {
@@ -129,7 +139,7 @@ export function EnquiryForm() {
   const desc = (k: Field) => (errs[k] ? `err-${k}` : undefined);
 
   return (
-    <form ref={form} className="form" onSubmit={onSubmit} noValidate>
+    <form ref={form} className="form" onSubmit={onSubmit} noValidate aria-busy={state === "sending"}>
       {(hasErrors || serverError) && (
         <div className="alert full" role="alert">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ flex: "none" }} aria-hidden="true">

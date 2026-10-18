@@ -1,21 +1,50 @@
 import { useEffect, useRef, useState } from "react";
-import { isRealNumber, useData, useLang, waLink } from "../lib/context";
+import { track } from "../lib/analytics";
+import { useData, useLang, waLink, whatsappContacts } from "../lib/context";
 
 export const WA_EVENT = "redecor:whatsapp";
 export const openWhatsApp = () => window.dispatchEvent(new Event(WA_EVENT));
 
+/** What the visitor is looking at (a project or a service), added to the prefilled WhatsApp message. */
+let context = "";
+export const setWhatsAppContext = (c: string) => {
+  context = c;
+};
+
+const Icon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4.2 19.8l1.2-3.9A8.2 8.2 0 1 1 8.3 18.7z" />
+    <path
+      d="M9.3 8.4c.3-.5.8-.5 1.1-.2l.8 1.3c.2.3.1.6-.1.9l-.4.4c.5 1.1 1.3 1.9 2.4 2.4l.4-.4c.3-.2.6-.3.9-.1l1.3.8c.3.3.3.8-.2 1.1-.7.5-1.6.6-2.6.1a6.6 6.6 0 0 1-3.8-3.8c-.4-1-.4-1.9.2-2.5z"
+      fill="currentColor"
+      stroke="none"
+    />
+  </svg>
+);
+
 export function WhatsApp() {
   const { t } = useLang();
-  const { office } = useData();
+  const { data } = useData();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const fab = useRef<HTMLButtonElement>(null);
+  const contacts = whatsappContacts(data?.offices ?? [], t.countries);
+  const message = () => (context ? t.wa.about(context) : t.wa.hello);
+  const go = (num: string) => {
+    track("whatsapp_click");
+    window.open(waLink(num, message()), "_blank", "noopener,noreferrer");
+    setOpen(false);
+  };
 
   useEffect(() => {
-    const onOpen = () => setOpen(true);
+    const onOpen = () => {
+      track("whatsapp_open");
+      if (contacts.length === 1) go(contacts[0].num);
+      else setOpen(true);
+    };
     window.addEventListener(WA_EVENT, onOpen);
     return () => window.removeEventListener(WA_EVENT, onOpen);
-  }, []);
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -36,10 +65,7 @@ export function WhatsApp() {
     };
   }, [open]);
 
-  const rows = [
-    { country: t.wa.egypt, num: office("eg")?.whatsapp || office("eg")?.phone || "" },
-    { country: t.wa.qatar, num: office("qa")?.whatsapp || office("qa")?.phone || "" },
-  ];
+  if (!contacts.length) return null; // no confirmed number: no button rather than a dead one
 
   return (
     <div className="wa" ref={root}>
@@ -57,39 +83,27 @@ export function WhatsApp() {
             </button>
           </div>
           <div className="wa__rows">
-            {rows.map((r) => {
-              const real = isRealNumber(r.num);
-              const body = (
-                <>
-                  <span className="meta">
-                    <b>{r.country}</b>
-                    <span className="num">{real ? r.num : t.wa.soon}</span>
-                  </span>
-                  {real && <span className="chev">{t.chev}</span>}
-                </>
-              );
-              return real ? (
-                <a key={r.country} className="wa__row" href={waLink(r.num)} target="_blank" rel="noopener noreferrer">
-                  {body}
-                </a>
-              ) : (
-                <div key={r.country} className="wa__row" aria-disabled="true">
-                  {body}
-                </div>
-              );
-            })}
+            {contacts.map((c) => (
+              <button key={c.num} type="button" className="wa__row" onClick={() => go(c.num)}>
+                <span className="meta">
+                  <b>{c.label}</b>
+                  <span className="num" dir="ltr">{c.num}</span>
+                </span>
+                <span className="chev" aria-hidden="true">{t.chev}</span>
+              </button>
+            ))}
           </div>
         </div>
       )}
-      <button ref={fab} className="wa__fab" aria-label={t.wa.label} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4.2 19.8l1.2-3.9A8.2 8.2 0 1 1 8.3 18.7z" />
-          <path
-            d="M9.3 8.4c.3-.5.8-.5 1.1-.2l.8 1.3c.2.3.1.6-.1.9l-.4.4c.5 1.1 1.3 1.9 2.4 2.4l.4-.4c.3-.2.6-.3.9-.1l1.3.8c.3.3.3.8-.2 1.1-.7.5-1.6.6-2.6.1a6.6 6.6 0 0 1-3.8-3.8c-.4-1-.4-1.9.2-2.5z"
-            fill="currentColor"
-            stroke="none"
-          />
-        </svg>
+      <button
+        ref={fab}
+        className="wa__fab"
+        aria-label={t.wa.label}
+        aria-haspopup={contacts.length > 1 ? "dialog" : undefined}
+        aria-expanded={contacts.length > 1 ? open : undefined}
+        onClick={() => (open ? setOpen(false) : openWhatsApp())}
+      >
+        <Icon />
         <span className="wa__label">{t.wa.fab}</span>
       </button>
     </div>

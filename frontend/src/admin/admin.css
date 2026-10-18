@@ -47,3 +47,14 @@
 @media (max-width: 600px) { .adm-slot { grid-template-columns: 1fr; } }
 .adm-slot .prev { aspect-ratio: 4/3; background: var(--ph); border-radius: 8px; overflow: hidden; display: grid; place-items: center; font-size: 12px; color: var(--muted); }
 .adm-slot .prev img { width: 100%; height: 100%; object-fit: cover; }
+.adm-meter { display: inline-block; width: 60px; height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; vertical-align: middle; }
+.adm-meter span { display: block; height: 100%; background: #1b5e20; }
+.adm-kv { border-collapse: collapse; width: 100%; }
+.adm-kv th { text-align: start; color: var(--muted); font-weight: 500; padding: 8px 16px 8px 0; width: 180px; vertical-align: top; }
+.adm-kv td { padding: 8px 0; }
+.adm-stat { display: flex; flex-direction: column; gap: 6px; padding: 16px; }
+.adm-stat strong { font-size: 26px; font-weight: 600; }
+.adm-preview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 16px; }
+.adm .btn--outline { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.adm .btn:disabled { opacity: .45; cursor: not-allowed; }
+.adm-preview { --bg: #0a0a0b; --surface: #141415; --ink: #f5f5f7; --muted: #a1a1a6; --line: #2b2b2e; --header-line: rgba(255,255,255,.12); background: #0a0a0b; color: #f5f5f7; }

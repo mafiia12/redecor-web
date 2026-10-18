@@ -5,6 +5,7 @@ import { ProjectGridSkeleton, ProjectTile } from "../components/Cards";
 import { SectionHead } from "../components/SectionHead";
 import { Segmented } from "../components/Filters";
 import { ClientWall } from "../components/ClientWall";
+import { Testimonials } from "../components/Testimonials";
 import { Divisions } from "../components/Divisions";
 import { HowWeWork } from "../components/HowWeWork";
 import { SitePhoto } from "../components/Photo";
@@ -47,7 +48,7 @@ export default function Home() {
             <div className="lead-hero__row">
               <p>{t.home.sub}</p>
               <div className="lead-hero__ctas">
-                <Link to={lp("/contact")} className="btn">{t.cta}</Link>
+                <Link to={lp("/contact")} className="btn" data-track="cta">{t.cta}</Link>
                 <Link to={lp("/projects")} className="link">{t.home.seeProjects}</Link>
               </div>
             </div>
@@ -117,6 +118,7 @@ export default function Home() {
       <Divisions />
       <HowWeWork />
       <ClientWall />
+      <Testimonials />
     </>
   );
 }

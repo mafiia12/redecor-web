@@ -64,6 +64,8 @@ class ProjectCardOut(BaseModel):
     cover: ImageOut | None
     tagline_en: str = ""
     tagline_ar: str = ""
+    scope_en: str = ""
+    scope_ar: str = ""
 
 
 class ProjectDetailOut(ProjectCardOut):

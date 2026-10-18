@@ -1,11 +1,48 @@
-# docker compose up -d --build     (then open http://SERVER_IP:8000)
+# Production stack: Caddy (HTTPS, automatic certificates) -> web (FastAPI + built site) ; backup (daily, verified)
+#   1. copy .env.example to .env and fill it in      2. docker compose up -d --build
+# Data (database, photos, PDFs, backups) lives in the "redecor-data" volume. Back it up off the server too.
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
 services:
   web:
     build: .
     restart: unless-stopped
-    ports: ["8000:8000"]
     env_file: .env
     volumes:
-      - redecor-data:/data     # database + uploaded photos live here (back this up)
+      - redecor-data:/data
+    ports:
+      - "127.0.0.1:8000:8000"   # local checks only; the internet reaches the site through Caddy
+    logging: *logging
+
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on: [web]
+    ports: ["80:80", "443:443"]
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging: *logging
+
+  backup:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      APP_ENV: production
+    volumes:
+      - redecor-data:/data
+      # - /mnt/offsite:/offsite        # optional second location, then set BACKUP_COPY_TO=/offsite in .env
+    command: ["python", "/app/tools/backup.py", "--db", "/data/redecor.db", "--uploads", "/data/uploads", "--out-dir", "/data/backups", "--loop-hours", "24"]
+    healthcheck: { disable: true }
+    logging: *logging
+
 volumes:
   redecor-data:
+  caddy-data:
+  caddy-config:

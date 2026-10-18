@@ -45,6 +45,8 @@ def card_out(p: Project) -> ProjectCardOut:
         cover=image_out(cover.image) if cover else None,
         tagline_en=p.tagline_en or "",
         tagline_ar=p.tagline_ar or "",
+        scope_en=p.scope_en or "",
+        scope_ar=p.scope_ar or "",
     )
 
 
@@ -61,8 +63,6 @@ def detail_out(p: Project, related: list[Project], prev: Project | None = None, 
         client_name=p.client_name,
         logo=image_out(p.logo),
         area_m2=p.area_m2,
-        scope_en=p.scope_en,
-        scope_ar=p.scope_ar,
         gallery=gallery,
         related=[card_out(r) for r in related],
         prev=card_out(prev) if prev else None,

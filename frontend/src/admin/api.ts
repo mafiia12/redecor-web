@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ApiError, request, type Img } from "../lib/api";
 
 const KEY = "redecor:admin-token";
@@ -95,6 +95,9 @@ export interface AdminProject {
   sort_order: number;
   cover: Img | null;
   images: AdminImage[];
+  completeness: number;
+  missing: string[];
+  is_public: boolean;
 }
 export interface AdminClient {
   id: number;
@@ -125,4 +128,45 @@ export interface AdminEnquiry {
   contact_method: string;
   lang: string;
   status: "new" | "contacted" | "closed";
+  notify_status: string;
+  notify_attempts: number;
+  notify_error: string;
+  notified_at: string | null;
 }
+export type Role = "admin" | "editor" | "viewer";
+export interface Me {
+  email: string;
+  role: Role;
+}
+export interface AdminUser {
+  id: number;
+  email: string;
+  role: Role;
+  created_at: string;
+}
+export interface AdminTestimonial {
+  id: number;
+  quote_en: string;
+  quote_ar: string;
+  author: string;
+  role_en: string;
+  role_ar: string;
+  company: string;
+  approval_note: string;
+  approved: boolean;
+  published: boolean;
+  sort_order: number;
+}
+export interface AdminDocument {
+  slot: string;
+  label: string;
+  filename: string;
+  size: number;
+  published: boolean;
+  url: string;
+}
+
+/** Signed-in user, available to every admin page (the server enforces the same rules). */
+export const MeContext = createContext<Me>({ email: "", role: "viewer" });
+export const useMe = () => useContext(MeContext);
+export const can = (me: Me, need: Role) => ["viewer", "editor", "admin"].indexOf(me.role) >= ["viewer", "editor", "admin"].indexOf(need);

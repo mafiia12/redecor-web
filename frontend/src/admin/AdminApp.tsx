@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useNavigate } from "react-router-dom";
-import { api, errorText, getToken, json, setToken } from "./api";
+import { api, can, errorText, getToken, json, MeContext, setToken, type Me } from "./api";
+import { AccountAdmin, DocumentsAdmin, SystemAdmin, TestimonialsAdmin, UsersAdmin } from "./SystemAdmin";
+import ProjectPreview from "./ProjectPreview";
 import ClientsAdmin from "./ClientsAdmin";
 import EnquiriesAdmin from "./EnquiriesAdmin";
 import OfficesAdmin from "./OfficesAdmin";
@@ -52,35 +54,45 @@ function Login() {
 
 function Shell() {
   const nav = useNavigate();
-  const [ok, setOk] = useState<boolean | null>(null);
+  const [me, setMe] = useState<Me | null | false>(null);
 
   useEffect(() => {
     document.title = "Admin | RE DECOR & MORE";
     document.documentElement.lang = "en";
     document.documentElement.dir = "ltr";
-    if (!getToken()) return setOk(false);
-    api("/me").then(() => setOk(true)).catch(() => setOk(false));
+    if (!getToken()) return setMe(false);
+    api<Me>("/me").then(setMe).catch(() => setMe(false));
   }, []);
 
-  if (ok === null) return null;
-  if (!ok) return <Navigate to="/admin/login" replace />;
+  if (me === null) return null;
+  if (!me) return <Navigate to="/admin/login" replace />;
 
   const link = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : undefined);
   return (
+    <MeContext.Provider value={me}>
     <div className="adm adm-shell">
       <aside className="adm-side">
         <img src="/logo-light.svg" alt="RE DECOR & MORE" />
         <NavLink to="/admin/projects" className={link}>Projects</NavLink>
         <NavLink to="/admin/clients" className={link}>Clients</NavLink>
         <NavLink to="/admin/images" className={link}>Site images</NavLink>
+        <NavLink to="/admin/documents" className={link}>Documents</NavLink>
+        <NavLink to="/admin/testimonials" className={link}>Testimonials</NavLink>
         <NavLink to="/admin/offices" className={link}>Offices</NavLink>
-        <NavLink to="/admin/enquiries" className={link}>Enquiries</NavLink>
+        {can(me, "editor") && <NavLink to="/admin/enquiries" className={link}>Enquiries</NavLink>}
+        <NavLink to="/admin/system" className={link}>Status &amp; analytics</NavLink>
+        {can(me, "admin") && <NavLink to="/admin/users" className={link}>Users</NavLink>}
         <span className="grow" />
+        <NavLink to="/admin/account" className={link}>{me.email} · {me.role}</NavLink>
         <a href="/" target="_blank" rel="noreferrer">View site ↗</a>
         <button onClick={() => { setToken(null); nav("/admin/login"); }}>Sign out</button>
       </aside>
-      <main className="adm-main"><Outlet /></main>
+      <main className="adm-main">
+        {!can(me, "editor") && <div className="adm-msg">Read-only access: you can view everything but not change it.</div>}
+        <Outlet />
+      </main>
     </div>
+    </MeContext.Provider>
   );
 }
 
@@ -96,6 +108,12 @@ export default function AdminApp() {
         <Route path="images" element={<SiteImagesAdmin />} />
         <Route path="offices" element={<OfficesAdmin />} />
         <Route path="enquiries" element={<EnquiriesAdmin />} />
+        <Route path="projects/:id/preview" element={<ProjectPreview />} />
+        <Route path="documents" element={<DocumentsAdmin />} />
+        <Route path="testimonials" element={<TestimonialsAdmin />} />
+        <Route path="system" element={<SystemAdmin />} />
+        <Route path="users" element={<UsersAdmin />} />
+        <Route path="account" element={<AccountAdmin />} />
         <Route path="*" element={<Navigate to="projects" replace />} />
       </Route>
     </Routes>

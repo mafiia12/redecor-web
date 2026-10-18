@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { track } from "../lib/analytics";
 import { useLang } from "../lib/context";
 import { CtaBand } from "./CtaBand";
 import { Footer } from "./Footer";
@@ -21,6 +22,18 @@ function ScrollManager() {
     }
     window.scrollTo(0, 0);
   }, [pathname, hash]);
+  useEffect(() => track("page_view", pathname), [pathname]);
+  // Primary calls to action carry data-track="cta"; one listener counts them all.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.("[data-track]");
+      const kind = el?.getAttribute("data-track");
+      if (kind === "cta") track("cta_click");
+      else if (kind === "profile") track("profile_download");
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
   return null;
 }
 

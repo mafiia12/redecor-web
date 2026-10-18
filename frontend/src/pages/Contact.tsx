@@ -1,7 +1,7 @@
 import { EnquiryForm } from "../components/EnquiryForm";
 import { OfficeCard } from "../components/OfficeCard";
 import { Reveal } from "../components/Reveal";
-import { useData, useLang, usePageMeta } from "../lib/context";
+import { useData, useLang, usePageMeta, visibleOffices } from "../lib/context";
 
 export default function Contact() {
   const { t } = useLang();
@@ -26,7 +26,7 @@ export default function Contact() {
             <EnquiryForm />
           </div>
           <aside className="contact-grid__offices">
-            {(data?.offices ?? []).map((o) => (
+            {visibleOffices(data?.offices ?? []).map((o) => (
               <OfficeCard key={o.country} office={o} />
             ))}
           </aside>

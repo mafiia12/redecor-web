@@ -77,3 +77,7 @@ export const DIVISIONS: Division[] = [
     lead: ["Eng. Ahmed Elkafrawy"],
   },
 ];
+
+/** About-page figures, in the order of t.about.stats. Only figures the company has confirmed are shown.
+ *  "3 regional bases" waits for confirmation (two offices are listed today): set it to true once confirmed. */
+export const STAT_CONFIRMED: boolean[] = [true, true, false];

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { SOCIAL } from "../config";
 import { services } from "../i18n";
-import { isRealNumber, pick, useData, useLang, waDigits } from "../lib/context";
+import { isRealNumber, pick, useData, useLang, visibleOffices, waDigits } from "../lib/context";
 import { openWhatsApp } from "./WhatsApp";
 
 const real = (v?: string) => !!v && !v.includes("[");
@@ -10,7 +10,9 @@ export function Footer() {
   const { t, lp, lang } = useLang();
   const { data } = useData();
   const offices = data?.offices ?? [];
-  const eg = offices.find((o) => o.country === "eg") ?? offices[0];
+  const shown = visibleOffices(offices);
+  const eg = shown.find((o) => o.country === "eg") ?? shown[0];
+  const profile = data?.documents?.["company-profile"];
   const address = eg ? pick(eg, "address", lang) : "";
   const email = offices.map((o) => o.email).find(real);
   const phone = offices.map((o) => o.phone).find(real);
@@ -31,6 +33,11 @@ export function Footer() {
             <img src="/logo-light.svg" alt={t.brand} width={150} height={86} loading="lazy" />
             <p className="ft__statement">{t.footer.statement}</p>
             <p className="ft__tag">{t.footer.tagline}</p>
+            {profile && (
+              <a className="ft__profile" href={profile.url} download={profile.filename} data-track="profile">
+                {t.footer.profile} ↓ <span>PDF · {Math.max(1, Math.round(profile.size / 1048576))} MB</span>
+              </a>
+            )}
           </div>
 
           <nav className="ft__col" aria-label={t.footer.services}>
