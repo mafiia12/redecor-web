@@ -1,0 +1,425 @@
+import re
+from datetime import date, datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .models import Image
+
+Country = Literal["eg", "qa", "sa"]
+ProjectType = Literal["residential", "hospitality", "retail", "office", "industrial", "healthcare", "public", "education", "landscape"]
+Service = Literal["contracting", "fitout", "supply", "pm", "unsure"]
+ContactMethod = Literal["phone", "whatsapp", "email"]
+EnquiryStatus = Literal["new", "contacted", "quoted", "won", "lost", "spam", "closed"]  # "closed": before the CRM
+EnquiryStatusNew = Literal["new", "contacted", "quoted", "won", "lost", "spam"]
+
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+class ImageOut(BaseModel):
+    src: str
+    srcset: str
+    width: int
+    height: int
+    color: str
+    fx: float = 0.5  # focal point (0..1) used for object-position when the image is cropped
+    fy: float = 0.5
+
+
+def image_out(img: Image | None) -> ImageOut | None:
+    if img is None:
+        return None
+    widths = [int(x) for x in img.widths.split(",")]
+    mid = widths[min(1, len(widths) - 1)]
+    return ImageOut(
+        src=f"/media/{img.key}/{mid}.webp",
+        srcset=", ".join(f"/media/{img.key}/{w}.webp {w}w" for w in widths),
+        width=img.width,
+        height=img.height,
+        color=img.color,
+    )
+
+
+class ProjectImageOut(BaseModel):
+    id: int
+    is_cover: bool
+    is_render: bool
+    full_bleed: bool
+    layout: str
+    caption_en: str
+    caption_ar: str
+    sort_order: int
+    image: ImageOut
+    kind: str | None = None  # render | executed (None = not set: hidden publicly)
+    alt_en: str = ""
+    alt_ar: str = ""
+
+
+class ProjectImageAdminOut(ProjectImageOut):
+    """Admin-only extras (who overrode the quality check is never sent to the public API)."""
+
+    focal_x: float | None = None
+    focal_y: float | None = None
+    quality_warnings: str = ""
+    quality_override_by: str = ""
+
+
+class ProjectCardOut(BaseModel):
+    id: int
+    slug: str
+    title_en: str
+    title_ar: str
+    city_en: str
+    city_ar: str
+    country: Country
+    type: ProjectType
+    year: int | None
+    is_render: bool
+    featured: bool
+    cover: ImageOut | None
+    tagline_en: str = ""
+    tagline_ar: str = ""
+    scope_en: str = ""
+    scope_ar: str = ""
+
+
+class ProjectDetailOut(ProjectCardOut):
+    summary_en: str
+    summary_ar: str
+    story_en: str
+    story_ar: str
+    details_en: str
+    details_ar: str
+    client_name: str
+    logo: ImageOut | None
+    area_m2: float | None
+    scope_en: str
+    scope_ar: str
+    gallery: list[ProjectImageOut]
+    related: list[ProjectCardOut]
+    prev: ProjectCardOut | None = None
+    next: ProjectCardOut | None = None
+
+
+class ClientOut(BaseModel):
+    id: int
+    name: str
+    url: str
+    logo: ImageOut | None
+
+
+class OfficeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    country: Country
+    address_en: str
+    address_ar: str
+    phone: str
+    whatsapp: str
+    email: str
+    hours_en: str
+    hours_ar: str
+    maps_url: str
+
+
+class SiteImageOut(BaseModel):
+    slot: str
+    alt_en: str
+    alt_ar: str
+    image: ImageOut
+
+
+class TestimonialOut(BaseModel):
+    id: int
+    quote_en: str
+    quote_ar: str
+    author: str
+    role_en: str
+    role_ar: str
+    company: str
+
+
+class DocumentOut(BaseModel):
+    slot: str
+    url: str
+    filename: str
+    size: int
+
+
+class BootstrapOut(BaseModel):
+    offices: list[OfficeOut]
+    site_images: dict[str, SiteImageOut]
+    clients: list[ClientOut]
+    projects: list[ProjectCardOut]
+    testimonials: list[TestimonialOut] = []
+    documents: dict[str, DocumentOut] = {}
+    attachments: dict[str, int] = {}  # quote-form limits: max_files, max_file_mb, max_total_mb
+
+
+EventName = Literal[
+    "page_view", "project_view", "service_view", "cta_click", "whatsapp_open", "whatsapp_click",
+    "enquiry_submit", "enquiry_success", "profile_download", "language_switch", "theme_switch",
+]
+
+
+class EventIn(BaseModel):
+    name: EventName
+    path: str = Field(default="", max_length=300)
+    lang: Literal["en", "ar", ""] = ""
+
+
+class EnquiryIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    phone: str = Field(min_length=7, max_length=40)
+    email: str = Field(default="", max_length=200)
+    country: Country
+    service: Service
+    project_type: ProjectType | Literal[""] = ""
+    area_m2: float | None = Field(default=None, ge=0, le=1_000_000)
+    message: str = Field(default="", max_length=4000)
+    contact_method: ContactMethod = "whatsapp"
+    lang: Literal["en", "ar"] = "en"
+    consent: bool
+    website: str = Field(default="", max_length=200)  # honeypot: real users leave it empty
+    elapsed_ms: int | None = Field(default=None, ge=0)  # time the form was open; bots post instantly
+    source: str = Field(default="", max_length=200)  # page the enquiry came from (e.g. a project), for context
+
+    @field_validator("name", "message", mode="before")
+    @classmethod
+    def _strip(cls, v):
+        return v.strip() if isinstance(v, str) else v
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str) -> str:
+        v = v.strip()
+        digits = re.sub(r"\D", "", v)
+        if not (7 <= len(digits) <= 16) or not re.fullmatch(r"[+\d\s\-()]+", v):
+            raise ValueError("invalid phone")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = v.strip()
+        if v and not EMAIL_RE.match(v):
+            raise ValueError("invalid email")
+        return v
+
+    @field_validator("consent")
+    @classmethod
+    def _consent(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("consent required")
+        return v
+
+
+# ---------- admin ----------
+class LoginIn(BaseModel):
+    email: str = Field(max_length=255)
+    password: str = Field(max_length=200)
+
+
+class PasswordChangeIn(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: str = Field(max_length=200)
+
+
+Role = Literal["admin", "editor", "viewer"]
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    email: str
+    role: str
+    created_at: datetime
+
+
+class UserCreateIn(BaseModel):
+    email: str = Field(max_length=255)
+    role: Role = "editor"
+    password: str = Field(max_length=200)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("invalid email")
+        return v
+
+
+class UserUpdateIn(BaseModel):
+    role: Role | None = None
+    password: str | None = Field(default=None, max_length=200)
+
+
+class ProjectIn(BaseModel):
+    slug: str | None = Field(default=None, max_length=120)
+    title_en: str = Field(min_length=1, max_length=200)
+    title_ar: str = Field(default="", max_length=200)
+    summary_en: str = Field(default="", max_length=2000)
+    summary_ar: str = Field(default="", max_length=2000)
+    tagline_en: str = Field(default="", max_length=300)
+    tagline_ar: str = Field(default="", max_length=300)
+    story_en: str = Field(default="", max_length=20000)
+    story_ar: str = Field(default="", max_length=20000)
+    details_en: str = Field(default="", max_length=4000)
+    details_ar: str = Field(default="", max_length=4000)
+    client_name: str = Field(default="", max_length=200)
+    city_en: str = Field(default="", max_length=100)
+    city_ar: str = Field(default="", max_length=100)
+    country: Country
+    type: ProjectType
+    year: int | None = Field(default=None, ge=1950, le=2100)
+    area_m2: float | None = Field(default=None, ge=0, le=10_000_000)
+    scope_en: str = Field(default="", max_length=300)
+    scope_ar: str = Field(default="", max_length=300)
+    is_render: bool = False
+    featured: bool = True
+    published: bool = True
+    sort_order: int = 0
+
+
+class ProjectAdminOut(ProjectIn):
+    id: int
+    slug: str
+    logo: ImageOut | None
+    cover: ImageOut | None
+    completeness: int = 0  # % of the recommended fields that are filled in
+    missing: list[str] = []
+    is_public: bool = False  # true when the public site shows it right now
+    block_reasons: list[str] = []
+    images_without_kind: int = 0
+    images: list[ProjectImageAdminOut]
+
+
+class ProjectImagePatch(BaseModel):
+    is_cover: bool | None = None
+    is_render: bool | None = None
+    full_bleed: bool | None = None
+    layout: Literal["full", "half"] | None = None
+    caption_en: str | None = Field(default=None, max_length=300)
+    caption_ar: str | None = Field(default=None, max_length=300)
+    sort_order: int | None = None
+    kind: Literal["render", "executed"] | None = None
+    alt_en: str | None = Field(default=None, max_length=300)
+    alt_ar: str | None = Field(default=None, max_length=300)
+    focal_x: float | None = Field(default=None, ge=0, le=1)
+    focal_y: float | None = Field(default=None, ge=0, le=1)
+    override_quality: bool = False  # accept a below-threshold image as cover (recorded with user and time)
+
+
+class ClientIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    url: str = Field(default="", max_length=300)
+    published: bool = False  # publish only after the client approved the use of its logo
+    sort_order: int = 0
+
+
+class ClientAdminOut(ClientIn):
+    id: int
+    logo: ImageOut | None
+    approval_status: str = "none"
+    is_public: bool = False
+    block_reasons: list[str] = []
+
+
+class OfficeIn(BaseModel):
+    address_en: str = Field(default="", max_length=400)
+    address_ar: str = Field(default="", max_length=400)
+    phone: str = Field(default="", max_length=40)
+    whatsapp: str = Field(default="", max_length=40)
+    email: str = Field(default="", max_length=200)
+    hours_en: str = Field(default="", max_length=200)
+    hours_ar: str = Field(default="", max_length=200)
+    maps_url: str = Field(default="", max_length=500)
+
+
+class SiteImageAltIn(BaseModel):
+    alt_en: str = Field(default="", max_length=300)
+    alt_ar: str = Field(default="", max_length=300)
+
+
+class EnquiryAdminOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    created_at: datetime
+    name: str
+    phone: str
+    email: str
+    country: Country
+    service: str
+    project_type: str
+    area_m2: float | None
+    message: str
+    contact_method: str
+    lang: str
+    status: EnquiryStatus
+    notify_status: str = ""
+    notify_attempts: int = 0
+    notify_error: str = ""
+    notified_at: datetime | None = None
+    assigned_to_id: int | None = None
+    assigned_to: str = ""
+    next_follow_up: date | None = None
+    source_page: str | None = ""
+    overdue: bool = False
+    attachment_count: int = 0
+    next_statuses: list[str] = []
+
+
+class EnquiryAttachmentOut(BaseModel):
+    id: int
+    original_name: str
+    size: int
+    detected_type: str
+    scan_status: str
+    scan_detail: str
+
+
+class EnquiryEventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    at: datetime
+    user_email: str
+    kind: str
+    from_value: str
+    to_value: str
+    note: str
+
+
+class EnquiryDetailOut(EnquiryAdminOut):
+    events: list[EnquiryEventOut] = []
+    attachments: list[EnquiryAttachmentOut] = []
+
+
+class EnquiryPatch(BaseModel):
+    """Any subset; each change is written to the enquiry's history."""
+
+    status: EnquiryStatusNew | None = None
+    assigned_to_id: int | None = None  # send null to unassign
+    next_follow_up: date | None = None  # send null to clear
+    note: str = Field(default="", max_length=4000)
+
+
+class OrderIn(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=2000)
+
+
+class TestimonialIn(BaseModel):
+    quote_en: str = Field(default="", max_length=2000)
+    quote_ar: str = Field(default="", max_length=2000)
+    author: str = Field(min_length=1, max_length=120)
+    role_en: str = Field(default="", max_length=160)
+    role_ar: str = Field(default="", max_length=160)
+    company: str = Field(default="", max_length=160)
+    approval_note: str = Field(default="", max_length=300)
+    approved: bool = False
+    published: bool = False
+    sort_order: int = 0
+
+
+class TestimonialAdminOut(TestimonialIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int

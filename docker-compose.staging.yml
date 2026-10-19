@@ -1,0 +1,71 @@
+# Staging override (new.redecorgroup.com). Requires Docker Compose v2.24+ (for !override / !reset).
+#   cp .env.staging.example .env.staging && chmod 600 .env.staging   # then fill it in
+#   python tools/check_env.py .env.staging
+#   docker compose -p redecor-staging -f docker-compose.yml -f docker-compose.staging.yml --env-file .env.staging up -d --build
+#   python tools/smoke_test.py --base-url https://new.redecorgroup.com
+#
+# Isolation from production:
+#   * every volume key used by the base file is re-declared below with an explicit staging `name:`,
+#     so even without `-p redecor-staging` staging can never mount production's data/certificates;
+#   * env_file is replaced by .env.staging (the base file's .env is NOT loaded);
+#   * web listens on 127.0.0.1:8001 instead of 8000.
+# NOTE: Caddy binds 80/443. If staging runs on the SAME server as production, do not start the staging
+# caddy (`... up -d --build web backup`) and add a `new.redecorgroup.com { reverse_proxy 127.0.0.1:8001 }`
+# site to the production Caddy instead (or run staging on its own server).
+
+services:
+  web:
+    env_file: !override
+      - .env.staging
+    environment:
+      APP_ENV: staging
+      ATTACHMENTS_DIR: /attachments
+    volumes: !override
+      - redecor-data:/data
+      - redecor-attachments:/attachments
+    ports: !override
+      - "127.0.0.1:8001:8000"   # local checks only; the internet reaches staging through Caddy
+
+  caddy:
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-new.redecorgroup.com}
+    volumes: !override
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  backup:
+    env_file: !override
+      - .env.staging
+    environment:
+      APP_ENV: staging
+      ATTACHMENTS_DIR: /attachments
+    volumes: !override
+      - redecor-data:/data
+      - redecor-attachments:/attachments
+      # - /mnt/offsite-staging:/offsite   # optional second location, then set BACKUP_COPY_TO=/offsite
+
+  # Optional virus scanner for enquiry attachments: start with `--profile virus-scan`,
+  # then set VIRUS_SCAN_ENABLED=1, CLAMAV_HOST=clamav, CLAMAV_PORT=3310 in .env.staging.
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    profiles: ["virus-scan"]
+    volumes: !override
+      - clamav-db:/var/lib/clamav
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+# Explicit names: these never resolve to the production volumes, whatever the project name is.
+volumes:
+  redecor-data:
+    name: redecor-staging-data
+  redecor-attachments:
+    name: redecor-staging-attachments
+  caddy-data:
+    name: caddy-staging-data
+  caddy-config:
+    name: caddy-staging-config
+  clamav-db:
+    name: clamav-staging-db
