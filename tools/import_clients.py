@@ -19,6 +19,7 @@ import io
 import os
 import sys
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import requests
@@ -71,7 +72,8 @@ def segment_logos(page):
     dist = np.abs(rgb - bg).max(axis=2)
     mask = dist > 40
     grown = ndimage.binary_dilation(mask, iterations=max(6, w // 150))  # merge icon + wordmark
-    labels, n = ndimage.label(grown)
+    # the stubs type label() as int | tuple; without output= it always returns (labels, count)
+    labels, n = cast(tuple[np.ndarray, int], ndimage.label(grown))
     boxes = []
     for sl in ndimage.find_objects(labels):
         y0, y1, x0, x1 = sl[0].start, sl[0].stop, sl[1].start, sl[1].stop
@@ -105,7 +107,7 @@ def segment_logos(page):
 
 def normalise(im: Image.Image, bg=None) -> Image.Image:
     im = knock_out_white(im)
-    bbox = im.getchannel("A").point(lambda a: 255 if a > 20 else 0).getbbox()
+    bbox = im.getchannel("A").point([255 if a > 20 else 0 for a in range(256)]).getbbox()
     if bbox:
         im = im.crop(bbox)
     a = np.array(im).astype(np.float32)
@@ -122,14 +124,14 @@ def normalise(im: Image.Image, bg=None) -> Image.Image:
     canvas = Image.new("RGBA", (im.width + 2 * pad, im.height + 2 * pad), (0, 0, 0, 0))
     canvas.paste(im, (pad, pad))
     if canvas.width > 600:
-        canvas = canvas.resize((600, round(canvas.height * 600 / canvas.width)), Image.LANCZOS)
+        canvas = canvas.resize((600, round(canvas.height * 600 / canvas.width)), Image.Resampling.LANCZOS)
     return canvas
 
 
 def fingerprint(im: Image.Image) -> np.ndarray:
     """Shape and colour signature (so two logos with the same silhouette but different colours stay separate)."""
     white = Image.new("RGBA", im.size, (255, 255, 255, 255))
-    g = Image.alpha_composite(white, im.convert("RGBA")).convert("RGB").resize((16, 16), Image.BILINEAR)
+    g = Image.alpha_composite(white, im.convert("RGBA")).convert("RGB").resize((16, 16), Image.Resampling.BILINEAR)
     return np.array(g, dtype=np.float32).ravel() / 255.0
 
 
@@ -155,10 +157,13 @@ def pptx_logos(pdf_dir: Path):
         if f.name.startswith("~$"):
             continue
         try:
-            prs = Presentation(f)
+            prs = Presentation(str(f))
         except Exception as e:
             print(f"(could not open {f.name}: {e})")
             continue
+        slide_width = prs.slide_width
+        if slide_width is None:  # same failure as before (the * below raised TypeError), with a clear message
+            raise ValueError(f"{f.name}: presentation has no slide size")
         for slide in prs.slides:
             shapes = list(walk(slide.shapes))
             text = " ".join(sh.text_frame.text for sh in shapes if sh.has_text_frame).upper()
@@ -169,7 +174,7 @@ def pptx_logos(pdf_dir: Path):
             allp = []  # (shape, rId, blob hash)
             for sh in shapes:
                 rids = sh._element.xpath(".//a:blip/@r:embed")
-                if rids and min(sh.width, sh.height) > 150000 and sh.width < prs.slide_width * 0.5:
+                if rids and min(sh.width, sh.height) > 150000 and sh.width < slide_width * 0.5:
                     try:
                         blob = slide.part.related_part(rids[0]).blob
                     except Exception:
@@ -188,7 +193,7 @@ def pptx_logos(pdf_dir: Path):
                     return any(b[0].left <= cx <= b[0].left + b[0].width and b[0].top <= cy <= b[0].top + b[0].height for b in badges)
                 cands = [c for c in cands if inside(c)]
             elif len(cands) > 6:  # no frames: skip anything in the left third (the Redecor logo)
-                cands = [c for c in cands if c[0].left + c[0].width / 2 > prs.slide_width * 0.4]
+                cands = [c for c in cands if c[0].left + c[0].width / 2 > slide_width * 0.4]
             print(f"  {len(cands)} logo pictures")
             if len(cands) < 6:
                 continue

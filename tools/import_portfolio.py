@@ -84,7 +84,7 @@ def page_images(doc, page, seen: set[str], all_images: bool = False) -> list[Ima
             continue
         seen.add(digest)
         if img.width > MAX_W:
-            img = img.resize((MAX_W, round(img.height * MAX_W / img.width)), Image.LANCZOS)
+            img = img.resize((MAX_W, round(img.height * MAX_W / img.width)), Image.Resampling.LANCZOS)
         out.append(img)
     return out
 
@@ -171,7 +171,7 @@ def load_folder(folder: Path, max_images: int):
             print(f"  ! skipped {f.name}: too small ({im.width}x{im.height})")
             continue
         if im.width > MAX_W:
-            im = im.resize((MAX_W, round(im.height * MAX_W / im.width)), Image.LANCZOS)
+            im = im.resize((MAX_W, round(im.height * MAX_W / im.width)), Image.Resampling.LANCZOS)
         out.append((f.stem, im, bool(meta.get(f.name, {}).get("is_render", False)),
                     {k: meta.get(f.name, {})[k] for k in ("caption_en", "caption_ar", "layout") if meta.get(f.name, {}).get(k)}))
     return out[:max_images]
@@ -241,7 +241,7 @@ def main():
                 r = s.post(f"{a.api}/api/admin/projects", json=body)
                 print("  ✓ draft created (hidden)" if r.status_code == 201 else f"  ! create failed: {r.text}")
             continue
-        imgs = load_folder(folder, a.max_images) if from_folder else collect(p, pdf_dir, a.max_images)
+        imgs = load_folder(folder, a.max_images) if from_folder and folder is not None else collect(p, pdf_dir, a.max_images)
         if from_folder:
             src_label = f"folder {folder}"
         print(f"  {len(imgs)} images" + (f"   ? confirm: {p['confirm']}" if p.get("confirm") else ""))
